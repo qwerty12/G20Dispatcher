@@ -1,0 +1,47 @@
+plugins {
+    alias(libs.plugins.androidApplication)
+}
+
+android {
+    namespace 'pk.q12.g20dispatcher'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "pk.q12.g20dispatcher"
+        minSdk 31
+        //noinspection ExpiredTargetSdkVersion
+        targetSdk 31
+        versionCode 1
+        versionName "1.0"
+        resourceConfigurations ['en']
+
+        ndk {
+            //noinspection ChromeOsAbiSupport
+            abiFilters 'armeabi-v7a'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_9
+        targetCompatibility JavaVersion.VERSION_1_9
+    }
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging true
+        }
+    }
+}
+
+dependencies {
+
+    implementation libs.libadb.android
+    implementation libs.sun.security.android
+    implementation libs.hiddenapibypass
+}

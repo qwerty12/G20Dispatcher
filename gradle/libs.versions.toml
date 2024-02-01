@@ -1,0 +1,14 @@
+[versions]
+agp = "8.3.0-beta02"
+hiddenapibypass = "4.3"
+libadbAndroid = "7d2d8d872d"
+sunSecurityAndroid = "1.1"
+
+[libraries]
+hiddenapibypass = { module = "org.lsposed.hiddenapibypass:hiddenapibypass", version.ref = "hiddenapibypass" }
+libadb-android = { module = "com.github.MuntashirAkon:libadb-android", version.ref = "libadbAndroid" }
+sun-security-android = { module = "com.github.MuntashirAkon:sun-security-android", version.ref = "sunSecurityAndroid" }
+
+[plugins]
+androidApplication = { id = "com.android.application", version.ref = "agp" }
+
