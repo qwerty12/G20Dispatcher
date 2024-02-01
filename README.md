@@ -154,4 +154,5 @@ Nothing special should be needed to be done here, just open the project in Andro
  - [MuntashirAkon's libadb-android](https://github.com/MuntashirAkon/libadb-android) - an easy, quick and reliable way to communicate with ADB which is needed by the accessibility service
  - [mirfatif's PermissionManagerX](https://github.com/mirfatif/PermissionManagerX) for the idea to bundle the daemon as an extracted "library" so it would be visible to ADB
  - [readme.so](https://readme.so/) - the base of what you're reading right now
+ - [KeyTester](https://github.com/a13ssandr0/KeyTester) - useful for quickly seeing what's recieved by Android
 
