@@ -83,7 +83,7 @@ The mappings are designed to match the natural equivalents where possible, and i
 
 * Red button -> [`KEYCODE_PROG_RED`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_RED)
 
-* Green button -> [`KEYCODE_PROG_GREEN`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_GREEN)
+* Green button -> `KEYCODE_MEDIA_PLAY_PAUSE` if pressed, [`KEYCODE_PROG_GREEN`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_GREEN) (in a single-press state) if held
 
 * Yellow button -> [`KEYCODE_PROG_YELLOW`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_YELLOW)
 
@@ -118,7 +118,7 @@ Clone the project
 ```
 
 Go to the project directory
-
+	
 ```bash
   cd G20Dispatcher
 ```

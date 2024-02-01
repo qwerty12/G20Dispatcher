@@ -174,10 +174,10 @@ static void daemonise(void)
 
 int main(void)
 {
-    daemonise();
-
     // Apps can access files in subdirectories of /data/local/tmp/ but not those in /data/local/tmp/ itself
     const char *filename = "/data/local/tmp/.g20dispatcher/sentinel";
+
+    daemonise();
 
     int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (fd == -1) {
@@ -259,7 +259,11 @@ int main(void)
                         case 0x000c0069: // KEY_RED
                             SEND_KEYPRESS(AKEYCODE_PROG_RED);
                         case 0x000c006a: // KEY_GREEN
-                            SEND_KEYPRESS(AKEYCODE_PROG_GREEN);
+                            if (mode == KEYPRESS_NORMAL)
+                                injectInputEvent(AKEYCODE_MEDIA_PLAY_PAUSE, KEYPRESS_NORMAL);
+                            else
+                                injectInputEvent(AKEYCODE_PROG_GREEN, KEYPRESS_NORMAL);
+                            break;
                         case 0x000c006c: // KEY_YELLOW
                             SEND_KEYPRESS(AKEYCODE_PROG_YELLOW);
                         case 0x000c006b: // KEY_BLUE
