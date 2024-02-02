@@ -77,13 +77,13 @@ The daemon will open an empty file at start and immediately `unlink` it. In the 
 
 The mappings are designed to match the natural equivalents where possible, and if not possible, fall back to the key codes the G10 remote sends.
 
-* Subtitles button -> [`KEYCODE_CAPTIONS`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_CAPTIONS)
+* Subtitles button -> [`KEYCODE_CAPTIONS`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_CAPTIONS) outside of Kodi, `AKEYCODE_T` in it
 
-* Info button -> [`KEYCODE_INFO`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_INFO)
+* Info button -> [`KEYCODE_INFO`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_INFO) outside of Kodi, `AKEYCODE_I` in it
 
 * Red button -> [`KEYCODE_PROG_RED`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_RED)
 
-* Green button -> `KEYCODE_MEDIA_PLAY_PAUSE` if pressed, [`KEYCODE_PROG_GREEN`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_GREEN) (in a single-press state) if held
+* Green button -> `KEYCODE_MEDIA_PLAY_PAUSE` if pressed outside of Kodi, but `AKEYCODE_T` inside of it; [`KEYCODE_PROG_GREEN`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_GREEN) (in a single-press state) if held
 
 * Yellow button -> [`KEYCODE_PROG_YELLOW`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_YELLOW)
 
@@ -118,7 +118,7 @@ Clone the project
 ```
 
 Go to the project directory
-	
+
 ```bash
   cd G20Dispatcher
 ```

@@ -19,6 +19,7 @@
 #include <android/keycodes.h>
 #include <android/log.h>
 #include "BinderGlue.h"
+#include "IsKodiTopmostApp.h"
 
 #define	nitems(x) (sizeof((x)) / sizeof((x)[0]))
 
@@ -253,16 +254,29 @@ int main(void)
                     switch (press_keycode)
                     {
                         case 0x000c0061: // KEY_SUBTITLE
-                            SEND_KEYPRESS(AKEYCODE_CAPTIONS);
+                            if (IsKodiTopmostApp()) {
+                                SEND_KEYPRESS(AKEYCODE_T);
+                            } else {
+                                SEND_KEYPRESS(AKEYCODE_CAPTIONS);
+                            }
                         case 0x000c01bd: // KEY_INFO
-                            SEND_KEYPRESS(AKEYCODE_INFO);
+                            if (IsKodiTopmostApp()) {
+                                SEND_KEYPRESS(AKEYCODE_I);
+                            } else {
+                                SEND_KEYPRESS(AKEYCODE_INFO);
+                            }
                         case 0x000c0069: // KEY_RED
                             SEND_KEYPRESS(AKEYCODE_PROG_RED);
                         case 0x000c006a: // KEY_GREEN
-                            if (mode == KEYPRESS_NORMAL)
-                                injectInputEvent(AKEYCODE_MEDIA_PLAY_PAUSE, KEYPRESS_NORMAL);
-                            else
+                            if (mode == KEYPRESS_NORMAL) {
+                                if (IsKodiTopmostApp()) {
+                                    injectInputEvent(AKEYCODE_SPACE, KEYPRESS_NORMAL);
+                                } else {
+                                    injectInputEvent(AKEYCODE_MEDIA_PLAY_PAUSE, KEYPRESS_NORMAL);
+                                }
+                            } else if (mode == KEYPRESS_LONG_PRESS) {
                                 injectInputEvent(AKEYCODE_PROG_GREEN, KEYPRESS_NORMAL);
+                            }
                             break;
                         case 0x000c006c: // KEY_YELLOW
                             SEND_KEYPRESS(AKEYCODE_PROG_YELLOW);
