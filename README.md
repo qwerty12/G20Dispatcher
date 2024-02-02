@@ -59,6 +59,8 @@ The daemon will open an empty file at start and immediately `unlink` it. In the 
 
     * building the daemon is done by running a batch file
 
+* The code to detect the [active application](https://github.com/qwerty12/G20Dispatcher/blob/master/native/IsKodiTopmostApp.cpp) isn't exactly safely written. However, it doesn't provide essential functionality, and can simply be removed if needed
+
 ### Accessibility service
 
 * As there's no form of IPC between the service and the daemon, there's no quick and easy way to tell the daemon to quit. In the service, another ADB connection is established to run `killall` is used to stop the daemon

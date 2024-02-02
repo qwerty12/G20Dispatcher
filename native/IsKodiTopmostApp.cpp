@@ -118,18 +118,32 @@ bool IsKodiTopmostApp()
         // mExtras should always be an empty
         // Bundle because keepIntentExtra is
         // false
-        while (reply.dataAvail() >= sizeof(int) * 2) {
+
+        // Check to see if there's room enough
+        // for at least four integers:
+        // mContentUserHint, the empty mExtras
+        // length of a potential String16 and
+        // a String16 with at least two characters
+        while (reply.dataAvail() >= sizeof(int32_t) * 4) {
             if (reply.readInt32() == -2) {
                 if (reply.readInt32() == 0xffffffff)
-                    goto readbaseActivity;
+                    goto readbaseActivityProbably;
             }
         }
 
         return false;
     }
-    readbaseActivity:
+    readbaseActivityProbably:
+    // While there doesn't seem to be a hard rule for
+    // Android itself, the Google Play Store apparently
+    // limits apps' package name to 150 characters
+    int32_t stringLengthMaybe = 0;
+    if (reply.readInt32(&stringLengthMaybe) != android::OK || stringLengthMaybe < 2 || stringLengthMaybe > 150)
+        return false;
+
+    reply.setDataPosition(reply.dataPosition() - sizeof(int32_t));
     android::String16 baseActivity;
-    if (reply.readString16(&baseActivity) == android::OK)
+    if (reply.readString16(&baseActivity) == android::OK && baseActivity.size() > 2)
         return baseActivity == android::String16("org.xbmc.kodi");
 
     return false;
