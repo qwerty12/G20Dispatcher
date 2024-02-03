@@ -69,7 +69,7 @@ The daemon will open an empty file at start and immediately `unlink` it. In the 
 
     * there's also no reliable way to tell if the daemon is still running, either, so the service attempts termination of the daemon if it assumes it's been started
 
-* Also with the lack of IPC, detecting if the daemon has been terminated (`hidepid` makes the traditional way impossible) is done by using `FileObserver` to check if a file created by the daemon has been closed. Setting up the `FileObserver` here is very race-condition prone, and just unreliable in general, so there may be times termination simply isn't detected, meaning the service has to be restarted manually to restart the daemon
+* Also with the lack of IPC, detecting if the daemon has been terminated (`hidepid` makes the traditional way impossible) is done by using `FileObserver` to check if a file created by the daemon has been closed. Setting up the `FileObserver` here is very race-condition prone, and just unreliable in general, so there may be times termination simply isn't detected, meaning the service has to be restarted manually to restart the daemon (or `adb shell "exec $(pm path pk.q12.g20dispatcher | cut -f2 -d: | sed 's%/base.apk%/lib/arm/libg20dispatcher.so%')"`)
 
 * ADB is used freely because this has been written for an Android TV device, and on those, the equivalent of `adb tcpip 5555` is automatically ran whenever USB debugging has been enabled
 

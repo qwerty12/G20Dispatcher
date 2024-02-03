@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/inotify.h>
 #include <sys/limits.h>
@@ -135,42 +136,60 @@ static void scan_device_path_for_g20()
     closedir(dir);
 }
 
-static void daemonise(void)
+static void daemonise()
 {
     struct rlimit rl;
-    if (getrlimit(RLIMIT_NOFILE, &rl) < 0)
+    if (getrlimit(RLIMIT_NOFILE, &rl) < 0) {
+        perror("getrlimit");
         exit(EXIT_FAILURE);
-
+    }
     if (rl.rlim_max == RLIM_INFINITY)
         rl.rlim_max = 1024;
 
-	pid_t pid = fork();
-	if (pid < 0)
-		exit(EXIT_FAILURE);
-	else if (pid > 0)
-		exit(EXIT_SUCCESS);
-
-    umask(0);
-	if (setsid() < 0)
-		exit(EXIT_FAILURE);
-	if (chdir("/") < 0)
-		exit(EXIT_FAILURE);
-
-    pid = fork();
-	if (pid < 0)
-		exit(EXIT_FAILURE);
-	else if (pid > 0)
-		exit(EXIT_SUCCESS);
-
-    for (int i = 0; i < rl.rlim_max; ++i)
+    for (int i = STDERR_FILENO + 1; i < rl.rlim_max; ++i)
         close(i);
 
-	// stdin
-    open("/dev/null", O_RDONLY | O_CLOEXEC);
+    /* for (int i = 1; i < _NSIG; ++i)
+        signal(i, SIG_DFL);
+
+    sigset_t set;
+    sigemptyset(&set);
+    sigprocmask(SIG_SETMASK, &set, NULL); */
+
+    pid_t pid = fork();
+    if (pid < 0) {
+        perror("fork");
+        exit(EXIT_FAILURE);
+    } else if (pid > 0) {
+        exit(EXIT_SUCCESS);
+    }
+
+    if (setsid() < 0) {
+        perror("setsid");
+        exit(EXIT_FAILURE);
+    }
+
+    close(STDIN_FILENO);
+    close(STDOUT_FILENO);
+    close(STDERR_FILENO);
+
+    pid = fork();
+    if (pid < 0)
+        exit(EXIT_FAILURE);
+    else if (pid > 0)
+        exit(EXIT_SUCCESS);
+
+    // stdin
+    open("/dev/null", O_RDWR);
     // stdout
-    open("/dev/null", O_RDWR | O_CLOEXEC);
-	// stderror
-    dup2(STDOUT_FILENO, STDERR_FILENO);
+    open("/dev/null", O_RDWR);
+    // stderr
+    open("/dev/null", O_RDWR);
+
+    umask(0);
+
+    if (chdir("/") < 0)
+        exit(EXIT_FAILURE);
 }
 
 int main(void)
