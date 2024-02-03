@@ -268,7 +268,7 @@ int main(void)
                         case 0x000c0069: // KEY_RED
                             SEND_KEYPRESS(AKEYCODE_PROG_RED);
                         case 0x000c006a: // KEY_GREEN
-                            if (mode == KEYPRESS_NORMAL) {
+                            if (__predict_true(mode == KEYPRESS_NORMAL)) {
                                 if (IsKodiTopmostApp()) {
                                     injectInputEvent(AKEYCODE_SPACE, KEYPRESS_NORMAL);
                                 } else {

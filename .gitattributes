@@ -1,1 +1,2 @@
 /native/extra_ndk/** linguist-vendored
+/app/src/main/java/pk/q12/g20dispatcher/AdbConnectionManager.java linguist-vendored

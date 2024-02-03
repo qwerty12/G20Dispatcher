@@ -25,6 +25,7 @@ import io.github.muntashirakon.adb.LocalServices;
 import io.github.muntashirakon.adb.android.AndroidUtils;
 
 public class G20AccessibilityService extends AccessibilityService {
+    private static final String TERMINATION_COMMAND = "killall libg20dispatcher.so";
     private static final Set<Integer> blockedScanCodes = Set.of(
             370, // KEY_SUBTITLE
             358, // KEY_INFO
@@ -101,14 +102,11 @@ public class G20AccessibilityService extends AccessibilityService {
                 adbShellStream = manager.openStream(LocalServices.SHELL);
 
                 try (final OutputStream os = adbShellStream.openOutputStream()) {
-                    final String stringBuilder = "killall g20dispatcher" +
+                    final String stringBuilder = TERMINATION_COMMAND +
                             ";rm -rf /data/local/tmp/.g20dispatcher/*" +
                             ";mkdir /data/local/tmp/.g20dispatcher" +
                             ";chmod 775 /data/local/tmp/.g20dispatcher/" +
-                            ";install -o shell -g shell -m 775 " +
-                            getApplicationContext().getApplicationInfo().nativeLibraryDir + "/libg20dispatcher.so" +
-                            " /data/local/tmp/g20dispatcher" +
-                            "&&exec /data/local/tmp/g20dispatcher\n";
+                            "&&exec " + getApplicationContext().getApplicationInfo().nativeLibraryDir + "/libg20dispatcher.so\n";
                     os.write(stringBuilder.getBytes(StandardCharsets.UTF_8));
                 }
                 adbShellStream.flush();
@@ -179,7 +177,7 @@ public class G20AccessibilityService extends AccessibilityService {
                         if (!manager.connect(AndroidUtils.getHostIpAddress(getApplication()), 5555))
                             return;
 
-                        manager.openStream("shell:killall g20dispatcher").close();
+                        manager.openStream("shell:" + TERMINATION_COMMAND).close();
                         manager.disconnect();
                     } catch (final Throwable ignored) {}
                 });

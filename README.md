@@ -10,6 +10,8 @@ Of course, if your device is rooted, just write a [key layout file](https://sour
 
 ## How does this work?
 
+tl;dr daemon gets input notifications at the lowest level, sends out own keypresses; accessibility service starts said daemon and blocks original keypresses
+
 G20Dispatcher consists of two parts:
 
 * a daemon that uses evdev to receive raw keypresses from the G20 remote and send out injected key press events
@@ -21,7 +23,7 @@ The daemon looks for the /dev/input/event device node corresponding to your remo
 The daemon runs under `adbd`, as the *shell* user. On an Android device that isn't rooted, this is the only way this can work: being able to read raw input from /dev/input requires your app's user belongs to the *input* group, which requires you declare the permission `android.permission.DIAGNOSTIC`, which is only granted to system applications and ADB (well, the group membership - it's why `getevent` works); and being able to inject synthetic key events requires you to have `android.permission.INJECT_EVENTS`, which again is only granted to system apps and ADB (it's why `cmd input keyevent` works).
 
 The accessibility service registers a simple [`onKeyEvent`](https://developer.android.com/reference/android/accessibilityservice/AccessibilityService#onKeyEvent(android.view.KeyEvent)) handler that will block the received KEY_UNKNOWN events with the G20-specific scancodes. The daemon cannot block already-received key presses. The accessibility service cannot inject its own key events, and nor can it receive unprocessed scancodes straight from the remote (important because Android sees two specific buttons as the same, while evdev allows for them to be discerned from each other).  
-The accessibility service starts and stops the daemon via ADB. ADB copies the daemon's executable to /data/local/tmp/ and starts running it under an ADB session. There is no communication between the daemon and the accessibility service.
+The accessibility service starts and stops the daemon via ADB. There is no communication between the daemon and the accessibility service.
 
 The daemon will open an empty file at start and immediately `unlink` it. In the accessibility service, a [`FileObserver`](https://developer.android.com/reference/android/os/FileObserver) is used to detect when the file is closed - in theory, only one open process should hold an open file descriptor to the file, so if it's closed, we can, erm, assume the process has been terminated.
 
@@ -67,7 +69,7 @@ The daemon will open an empty file at start and immediately `unlink` it. In the 
 
     * there's also no reliable way to tell if the daemon is still running, either, so the service attempts termination of the daemon if it assumes it's been started
 
-* Also with the lack of IPC, detecting if the daemon has been terminated (`hidepid` makes the traditional way impossible) is done by using `FileObserver` to check if a file created by the daemon has been closed. Setting up the `FileObserver` here is very race-condition prone, and just unreliable in general, so there may be times termination simply isn't detected, meaning the service has to be restarted manually to restart the daemon (or `adb shell exec /data/local/tmp/g20dispatcher`)
+* Also with the lack of IPC, detecting if the daemon has been terminated (`hidepid` makes the traditional way impossible) is done by using `FileObserver` to check if a file created by the daemon has been closed. Setting up the `FileObserver` here is very race-condition prone, and just unreliable in general, so there may be times termination simply isn't detected, meaning the service has to be restarted manually to restart the daemon
 
 * ADB is used freely because this has been written for an Android TV device, and on those, the equivalent of `adb tcpip 5555` is automatically ran whenever USB debugging has been enabled
 
@@ -79,27 +81,19 @@ The daemon will open an empty file at start and immediately `unlink` it. In the 
 
 The mappings are designed to match the natural equivalents where possible, and if not possible, fall back to the key codes the G10 remote sends.
 
-* Subtitles button -> [`KEYCODE_CAPTIONS`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_CAPTIONS) outside of Kodi, `AKEYCODE_T` in it
-
-* Info button -> [`KEYCODE_INFO`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_INFO) outside of Kodi, `AKEYCODE_I` in it
-
-* Red button -> [`KEYCODE_PROG_RED`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_RED)
-
-* Green button -> `KEYCODE_MEDIA_PLAY_PAUSE` if pressed outside of Kodi, but `AKEYCODE_T` inside of it; [`KEYCODE_PROG_GREEN`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_GREEN) (in a single-press state) if held
-
-* Yellow button -> [`KEYCODE_PROG_YELLOW`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_YELLOW)
-
-* Blue button -> [`KEYCODE_PROG_BLUE`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_BLUE)
-
-* Settings button -> A Logcat message starting with `KEYCODE_NOTIFICATION`
-
-* YouTube button -> A Logcat message starting with `KEYCODE_BUTTON_3`
-
-* Netflix button -> A Logcat message starting with `KEYCODE_BUTTON_4`
-
-* Prime Video button -> A Logcat message starting with `KEYCODE_BUTTON_9`
-
-* Google Play button -> A Logcat message starting with `KEYCODE_BUTTON_10`
+| G20 Button            | Outside Kodi                                               | Inside Kodi                                                      |
+|-----------------------|-----------------------------------------------------------|------------------------------------------------------------------|
+| Subtitles      | [`KEYCODE_CAPTIONS`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_CAPTIONS) | [`KEYCODE_T`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_T)                                                      |
+| Info           | [`KEYCODE_INFO`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_INFO)       | [`KEYCODE_I`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_I)                                                      |
+| Red            | [`KEYCODE_PROG_RED`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_RED)   |                                                                  |
+| Green          | [`KEYCODE_MEDIA_PLAY_PAUSE`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_MEDIA_PLAY_PAUSE)<br>[`KEYCODE_PROG_GREEN`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_GREEN) (held) | [`KEYCODE_SPACE`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_SPACE)<br>[`KEYCODE_PROG_GREEN`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_GREEN) (held) |
+| Yellow         | [`KEYCODE_PROG_YELLOW`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_YELLOW) |                                                                  |
+| Blue           | [`KEYCODE_PROG_BLUE`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_BLUE)     |                                                                  |
+| Settings       | Logcat message starting with [`KEYCODE_NOTIFICATION`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_NOTIFICATION) |                                                  |
+| YouTube        | Logcat message starting with [`KEYCODE_BUTTON_3`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_BUTTON_3) |                                                      |
+| Netflix        | Logcat message starting with [`KEYCODE_BUTTON_4`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_BUTTON_4) |                                                      |
+| Prime Video    | Logcat message starting with [`KEYCODE_BUTTON_9`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_BUTTON_9) |                                                      |
+| Google Play    | Logcat message starting with [`KEYCODE_BUTTON_10`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_BUTTON_10) |                                                     |
 
 The reason why Logcat messages are sent for some buttons is because [tvQuickActions Pro](https://play.google.com/store/apps/details?id=dev.vodik7.tvquickactions) can be used to trigger events upon [certain Logcat messages](https://tvdevinfo.com/tvquickactions/trigger_actions_macros/#triggers). This allows you to use the wealth of functionality provided by tvQuickActions Pro, which extends to far more than just launching programs.
 
@@ -157,4 +151,5 @@ Nothing special should be needed to be done here, just open the project in Andro
  - [mirfatif's PermissionManagerX](https://github.com/mirfatif/PermissionManagerX) for the idea to bundle the daemon as an extracted "library" so it would be visible to ADB
  - [readme.so](https://readme.so/) - the base of what you're reading right now
  - [KeyTester](https://github.com/a13ssandr0/KeyTester) - useful for quickly seeing what's recieved by Android
+ - ChatGPT
 
