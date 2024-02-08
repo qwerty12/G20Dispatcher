@@ -154,8 +154,7 @@ void injectInputEvent(int32_t keyCode, KeyPressMode mode)
             0 /*repeatCount*/,
             now /*downTime*/,
             now /*eventTime*/);
-    if (!input->injectInputEvent(*ev, InputEventInjectionSync::WAIT_FOR_FINISHED))
-        return;
+    input->injectInputEvent(*ev, InputEventInjectionSync::WAIT_FOR_FINISHED);
 
     if (mode == KEYPRESS_LONG_PRESS) {
         const uint64_t nextEventTime = now + GLOBAL_ACTIONS_KEY_TIMEOUT;
