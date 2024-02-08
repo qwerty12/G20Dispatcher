@@ -75,6 +75,8 @@ static bool connectActivityTaskService()
 
 bool IsKodiTopmostApp()
 {
+    static const android::StaticString16 kodiBaseActivity = android::StaticString16(u"org.xbmc.kodi");
+    static const size_t kodiBaseActivitySize = kodiBaseActivity.size();
     android::Parcel reply;
 
     if (!activity_task && !connectActivityTaskService())
@@ -124,27 +126,22 @@ bool IsKodiTopmostApp()
         // mContentUserHint, the empty mExtras
         // length of a potential String16 and
         // a String16 with at least two characters
-        while (reply.dataAvail() >= sizeof(int32_t) * 4) {
-            if (reply.readInt32() == -2) {
-                if (reply.readInt32() == 0xffffffff)
-                    goto readbaseActivityProbably;
-            }
-        }
+        do {
+            if (reply.readInt32() == -2 && reply.readInt32() == 0xffffffff)
+                goto readbaseActivityProbably;
+        } while (reply.dataAvail() >= sizeof(int32_t) * 4);
 
         return false;
     }
     readbaseActivityProbably:
-    // While there doesn't seem to be a hard rule for
-    // Android itself, the Google Play Store apparently
-    // limits apps' package name to 150 characters
     int32_t stringLengthMaybe = 0;
-    if (reply.readInt32(&stringLengthMaybe) != android::OK || stringLengthMaybe < 2 || stringLengthMaybe > 150)
+    if (reply.readInt32(&stringLengthMaybe) != android::OK || stringLengthMaybe != kodiBaseActivitySize)
         return false;
-
     reply.setDataPosition(reply.dataPosition() - sizeof(int32_t));
+
     android::String16 baseActivity;
-    if (reply.readString16(&baseActivity) == android::OK && baseActivity.size() > 2)
-        return baseActivity == android::String16("org.xbmc.kodi");
+    if (reply.readString16(&baseActivity) == android::OK)
+        return baseActivity == kodiBaseActivity;
 
     return false;
 }
