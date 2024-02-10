@@ -275,7 +275,7 @@ int main(void)
                         case 0x000c0061: // KEY_SUBTITLE
                             SEND_KEYPRESS(IsKodiTopmostApp() ? AKEYCODE_T : AKEYCODE_CAPTIONS);
                         case 0x000c01bd: // KEY_INFO
-                            SEND_KEYPRESS(IsKodiTopmostApp() ? AKEYCODE_I : AKEYCODE_INFO);
+                            SEND_KEYPRESS(AKEYCODE_INFO);
                         case 0x000c0069: // KEY_RED
                             SEND_KEYPRESS(AKEYCODE_PROG_RED);
                         case 0x000c006a: // KEY_GREEN
