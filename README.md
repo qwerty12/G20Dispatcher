@@ -4,7 +4,7 @@ An Android non-root userspace "key remapper" that works by receiving events dire
 
 The code is written really badly - [hacks and assumptions abound](#limitations) - but I thought it was worth sharing for the idea alone. This is non-configurable, made for the specific purpose of getting a [G20](https://www.twelectronics.co.uk/g10-g20#comp-kkrcrgz61) remote working with the 2023 onn. 4K TV Box.
 
-Most G20 keys are recognised by the onn. box - the onn. itself professes to support the G20: `[ro.blutooth.remote.isSupport]: [Onn-Remote;RemoteG10;RemoteG20]` - however, a fair few keys are simply seen by Android as KEY_UNKNOWN and the YouTube and the Netflix buttons appear to have the same scancode to Android, making differentiating them impossible. Either the onn. doesn't actually support the G20, or the G20 I have (bought from MECOOL, the remote itself is unbranded) reports a different VID and/PID or is programmed to send out different scancodes from a reference G20.
+Most G20 keys are recognised by the onn. box - the onn. initial Bluetooth setup wizard appears to accept a G20 as an acceptable remote for pairing (and exiting) - however, a fair few keys are simply seen by Android as KEY_UNKNOWN and the YouTube and the Netflix buttons present the same scancode to Android, making differentiating them impossible. Either the onn. doesn't actually support the G20, or the G20 I have (bought from MECOOL, the remote itself is unbranded) reports a different VID and/PID or is programmed to send out different scancodes from a reference G20.
 
 Of course, if your device is rooted, just write a [key layout file](https://source.android.com/docs/core/interaction/input/key-layout-files) instead of dealing with this workaround.
 
@@ -14,13 +14,13 @@ tl;dr daemon gets input notifications at the lowest level, sends out own keypres
 
 G20Dispatcher consists of two parts:
 
-* a daemon that uses evdev to receive raw keypresses from the G20 remote and send out injected key press events
+* a daemon that uses evdev to receive raw keypresses from the G20 remote and send out injected key press events in response
 
 * an [accessibility service](https://developer.android.com/guide/topics/ui/accessibility/service) that blocks Android applications from seeing the KEY_UNKNOWN presses reported from the remote and takes care of starting, stopping and respawning the daemon
 
 The daemon looks for the /dev/input/event device node corresponding to your remote. If it's not found, inotify will listen out for new devnodes (and for the existing devnode being removed in case of, say, disconnection). It will read `input_event`s from the remote and use [`InputManager`](https://developer.android.com/reference/android/hardware/input/InputManager)'s `injectInputEvent` via Binder to send an equivalent keypress event to Android that it will understand. This is done natively in C/C++ code in the same process - `cmd input keyevent` isn't spawned, and nor is a helper written in Java (or Kotlin) used.
 
-The daemon runs under `adbd`, as the *shell* user. On an Android device that isn't rooted, this is the only way this can work: being able to read raw input from /dev/input requires your app's user belongs to the *input* group, which requires you declare the permission `android.permission.DIAGNOSTIC`, which is only granted to system applications and ADB (well, the group membership - it's why `getevent` works); and being able to inject synthetic key events requires you to have `android.permission.INJECT_EVENTS`, which again is only granted to system apps and ADB (it's why `cmd input keyevent` works).
+The daemon runs under `adbd`, as the *shell* user. On an Android device that isn't rooted, this is the only way this can work: being able to read from /dev/input requires your app's user belongs to the *input* group, which only happens if the `android.permission.DIAGNOSTIC` permission is declared - but only system applications and ADB can do that. Also, injecting synthetic key events requires `android.permission.INJECT_EVENTS`, which again is only granted to system apps and ADB (it's why `cmd input keyevent` works).
 
 The accessibility service registers a simple [`onKeyEvent`](https://developer.android.com/reference/android/accessibilityservice/AccessibilityService#onKeyEvent(android.view.KeyEvent)) handler that will block the received KEY_UNKNOWN events with the G20-specific scancodes. The daemon cannot block already-received key presses. The accessibility service cannot inject its own key events, and nor can it receive unprocessed scancodes straight from the remote (important because Android sees two specific buttons as the same, while evdev allows for them to be discerned from each other).  
 The accessibility service starts and stops the daemon via ADB. There is no communication between the daemon and the accessibility service.
@@ -29,23 +29,23 @@ The daemon will open an empty file at start and immediately `unlink` it. In the 
 
 ## Limitations
 
-* it assumes Android 12 throughout (in the actual code itself, in the ADB commands ran and the build tools invoked etc. etc.)
+* It assumes Android 12 throughout (in the actual code itself, in the ADB commands ran and the build tools invoked etc. etc.)
 
 ### Daemon
 
-* only one G20 remote is handled; in the case of multiple G20s, the latest connected one wins
+* Only one G20 remote is handled; in the case of multiple G20s, the latest connected one wins
 
 * the sentinel file is assumed to not exist at start
 
-    * not that there should be a need, but running two instances probably isn't going to work well; there's no check for an existing instance
+    * not that there should be a need, but running two instances probably isn't going to work well - there are no checks for existing instances
   
-* double-tap keypresses aren't detected
+* double-tap keypresses aren't detected (possible to do if dynamically adjusting `poll`'s timeout)
 
-* key presses are only dispatched when the button is released, so this makes holding buttons a little annoying
+* key presses are only dispatched when the button is released, so this makes holding buttons a little annoying (see `poll` point above)
 
 * the time taken to assume a key is being held down is arbitrarily chosen and probably doesn't line up with Android's default
 
-* the C++ code is there because I have no choice. You'll see what I mean if you open [BinderGlue.cpp](https://github.com/qwerty12/G20Dispatcher/blob/master/native/BinderGlue.cpp)
+* the C++ code is there only because I realistically have no choice but to write C++
 
     * the Binder C++ interface indeed really isn't meant for use with the NDK. In order to get this to build with the NDK, a number of hacks are used:
 
@@ -55,38 +55,38 @@ The daemon will open an empty file at start and immediately `unlink` it. In the 
 
         * the daemon links to /system/lib/libstdc++.so instead of the NDK's not-included-on-devices LLVM libstdc++ via various hacks. Why this doesn't cause a crash at some point I do not know.
 
-    * most of that code could probably be rewritten in C, using the Binder NDK interface, but that's for another day
+    * Binder NDK does provide a C interface, but that involves then maintaining C bindings for things like KeyEvent
 
-* building the daemon isn't integrated into Gradle; CMake etc. isn't used, you need to build it manually before building the accessibility service (the APK of which pretty much serves as a container)
+* building the daemon isn't integrated into Gradle; CMake etc. isn't used, you need to build it manually before building the accessibility service (the APK ends up serving as a container)
 
-    * building the daemon is done by running a batch file
+    * (building the daemon is done by running a batch file)
 
-* The code to detect the [active application](https://github.com/qwerty12/G20Dispatcher/blob/master/native/IsKodiTopmostApp.cpp) isn't exactly safely written. However, it doesn't provide essential functionality, and can simply be removed if needed
+* the code to detect the [active application](https://github.com/qwerty12/G20Dispatcher/blob/master/native/IsKodiTopmostApp.cpp) makes a lot of assumptions. However, it doesn't provide essential functionality and can simply be removed if needed
 
 ### Accessibility service
 
-* As there's no form of IPC between the service and the daemon, there's no quick and easy way to tell the daemon to quit. In the service, another ADB connection is established to run `killall` is used to stop the daemon
+* As there's no form of IPC between the service and the daemon, there's no nice way to tell the daemon to quit. In the service, another ADB connection is established to run `killall` to stop the daemon
 
-    * there's also no reliable way to tell if the daemon is still running, either, so the service attempts termination of the daemon if it assumes it's been started
+    * there's also no reliable way to tell if the daemon is still running, either, so the service attempts termination of the daemon only if it can assume it's been started in the first place
 
-* Also with the lack of IPC, detecting if the daemon has been terminated (`hidepid` makes the traditional way impossible) is done by using `FileObserver` to check if a file created by the daemon has been closed. Setting up the `FileObserver` here is very race-condition prone, and just unreliable in general, so there may be times termination simply isn't detected, meaning the service has to be restarted manually to restart the daemon (or `adb shell "exec $(pm path pk.q12.g20dispatcher | cut -f2 -d: | sed 's%/base.apk%/lib/arm/libg20dispatcher.so%')"`)
+* also with the lack of IPC, detecting if the daemon has been terminated (`hidepid` makes the traditional way impossible) is done by using `FileObserver` to check if a file created by the daemon has been closed. Setting up the `FileObserver` here is very race-condition prone, and just unreliable in general, so there may be times termination simply isn't detected, meaning the service has to be restarted manually to restart the daemon (or `adb shell "exec $(pm path pk.q12.g20dispatcher | cut -f2 -d: | sed 's%/base.apk%/lib/arm/libg20dispatcher.so%')"`)
 
 * ADB is used freely because this has been written for an Android TV device, and on those, the equivalent of `adb tcpip 5555` is automatically ran whenever USB debugging has been enabled
 
 * on each initial subsequent start of the service, there's a 30-second delay before the first ADB connection to start the daemon is established. This is done because at boot time, the service fails to start the daemon reliably
 
-    * Unfortunately, the allowed ways to check if boot has completed are unreliable for this and so the delay is applied when starting the service for the first time from the Android settings
+    * unfortunately, the allowed ways to check if boot has completed are unreliable for this and so the delay is applied even when starting the service for the first time from the Android settings
 
 ## Key mappings
 
-The mappings are designed to match the natural equivalents where possible, and if not possible, fall back to the key codes the G10 remote sends.
+The mappings are designed to match the most natural equivalents where possible, falling back to the key codes the G10 remote sends.
 
-| G20 Button            | Outside Kodi                                               | Inside Kodi                                                      |
+| G20 Button            | Outside of Kodi                                            | Inside Kodi (same as Outside if empty)                           |
 |-----------------------|-----------------------------------------------------------|------------------------------------------------------------------|
 | Subtitles      | [`KEYCODE_CAPTIONS`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_CAPTIONS) | [`KEYCODE_T`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_T)                                                      |
-| Info           | [`KEYCODE_INFO`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_INFO)       | [`KEYCODE_I`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_I)                                                      |
+| Info           | [`KEYCODE_INFO`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_INFO)       | `KEYCODE_INFO` (read [Keymap](https://kodi.wiki/view/Keymap) and [this](https://github.com/qwerty12/G20Dispatcher/commit/7b72b0b7ea431aacb753f784a33da204f72843db) to make it work)                                                                                           |
 | Red            | [`KEYCODE_PROG_RED`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_RED)   |                                                                  |
-| Green          | [`KEYCODE_MEDIA_PLAY_PAUSE`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_MEDIA_PLAY_PAUSE)<br>[`KEYCODE_PROG_GREEN`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_GREEN) (held) | [`KEYCODE_SPACE`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_SPACE)<br>[`KEYCODE_PROG_GREEN`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_GREEN) (held) |
+| Green          | [`KEYCODE_MEDIA_PLAY_PAUSE`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_MEDIA_PLAY_PAUSE)<br>[`KEYCODE_PROG_GREEN`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_GREEN) (held) |                                                                                                                                                                                                                   |
 | Yellow         | [`KEYCODE_PROG_YELLOW`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_YELLOW) |                                                                  |
 | Blue           | [`KEYCODE_PROG_BLUE`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_BLUE)     |                                                                  |
 | Settings       | Logcat message starting with [`KEYCODE_NOTIFICATION`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_NOTIFICATION) |                                                  |
@@ -95,9 +95,9 @@ The mappings are designed to match the natural equivalents where possible, and i
 | Prime Video    | Logcat message starting with [`KEYCODE_BUTTON_9`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_BUTTON_9) |                                                      |
 | Google Play    | Logcat message starting with [`KEYCODE_BUTTON_10`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_BUTTON_10) |                                                     |
 
-The reason why Logcat messages are sent for some buttons is because [tvQuickActions Pro](https://play.google.com/store/apps/details?id=dev.vodik7.tvquickactions) can be used to trigger events upon [certain Logcat messages](https://tvdevinfo.com/tvquickactions/trigger_actions_macros/#triggers). This allows you to use the wealth of functionality provided by tvQuickActions Pro, which extends to far more than just launching programs.
+Logcat messages are sent for some buttons because [tvQuickActions Pro](https://play.google.com/store/apps/details?id=dev.vodik7.tvquickactions) can be used to trigger events upon seeing [certain Logcat messages](https://tvdevinfo.com/tvquickactions/trigger_actions_macros/#triggers). This allows you to use the wealth of functionality provided by tvQuickActions Pro, which extends to far more than just launching programs.
 
-When adding a Logcat trigger, use the following details:
+Use the following details in tvQA to add a Logcat trigger:
 
 Tag: `G20D`
 
@@ -121,9 +121,9 @@ Go to the project directory
 
 ### Building the daemon
 
-(Note: this is optional - a precompiled ARMv7 Android 12-targeting binary is included)
+(Note: this is optional - a compiled ARMv7 Android 12-targeting binary is already included)
 
-Go the lib directory and download the needed lib files (substitute as needed if you're building for something other than an ARMv7 Android 12 device)
+Assuming you have the NDK already set up, go the lib directory and download the needed lib files (substitute as needed if you're building for something other than an ARMv7 Android 12 device)
 
 ```bash
   cd native\extra_ndk\lib
