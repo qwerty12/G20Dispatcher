@@ -89,21 +89,11 @@ The mappings are designed to match the most natural equivalents where possible, 
 | Green          | [`KEYCODE_MEDIA_PLAY_PAUSE`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_MEDIA_PLAY_PAUSE)<br>[`KEYCODE_PROG_GREEN`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_GREEN) (held) |                                                                                                                                                                                                                   |
 | Yellow         | [`KEYCODE_PROG_YELLOW`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_YELLOW) |                                                                  |
 | Blue           | [`KEYCODE_PROG_BLUE`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_BLUE)     |                                                                  |
-| Settings       | Logcat message starting with [`AKEYCODE_NOTIFICATION`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_NOTIFICATION) |                                                  |
-| YouTube        | Logcat message starting with [`AKEYCODE_BUTTON_3`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_BUTTON_3) |                                                      |
-| Netflix        | Logcat message starting with [`AKEYCODE_BUTTON_4`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_BUTTON_4) |                                                      |
-| Prime Video    | Logcat message starting with [`AKEYCODE_BUTTON_9`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_BUTTON_9) |                                                      |
-| Google Play    | Logcat message starting with [`AKEYCODE_BUTTON_10`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_BUTTON_10) |                                                     |
-
-Logcat messages are sent for some buttons because [tvQuickActions Pro](https://play.google.com/store/apps/details?id=dev.vodik7.tvquickactions) can be used to trigger events upon seeing [certain Logcat messages](https://tvdevinfo.com/tvquickactions/trigger_actions_macros/#triggers). This allows you to use the wealth of functionality provided by tvQuickActions Pro, which extends to far more than just launching programs.
-
-Use the following details in tvQA to add a Logcat trigger:
-
-Tag: `G20D`
-
-Filter: `<name of subtituted key> 0`
-
-Replace `0` with `2` in the filter if you want the action to occur when the key has been held down and released.
+| Settings       | [`KEYCODE_ENTER`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_ENTER) (useful for Flutter apps that don't recognise the D-pad center button)<br>Launch TV Settings (held) |                                                  |
+| YouTube        | Launch [SmartTube](https://github.com/yuliskov/SmartTube) |                                                      |
+| Netflix        | Launch [Kodi](https://kodi.tv/) |                                                      |
+| Prime Video    | Launch [Spotify](https://play.google.com/store/apps/details?id=com.spotify.tv.android)<br>Launch [Stremio](https://play.google.com/store/apps/details?id=com.stremio.one) (held) |                                                      |
+| Google Play    | [Connect to your Bluetooth headset](https://github.com/qwerty12/TVLowQualityBT?tab=readme-ov-file#automating-headset-connection)<br>Send WOL packet (held) |                                                     |
 
 ## Building
 
@@ -152,4 +142,4 @@ Nothing special should be needed to be done here, just open the project in Andro
  - [readme.so](https://readme.so/) - the base of what you're reading right now
  - [KeyTester](https://github.com/a13ssandr0/KeyTester) - useful for quickly seeing what's recieved by Android
  - ChatGPT
-
+ - [GramThanos's WakeOnLAN](https://github.com/GramThanos/WakeOnLAN) - simple, MIT-licensed C WOL packet sender

@@ -17,10 +17,14 @@
 #include <err.h>
 #include <errno.h>
 #include <unistd.h>
+#include <spawn.h>
 #include <android/keycodes.h>
-#include <android/log.h>
 #include "BinderGlue.h"
 #include "IsKodiTopmostApp.h"
+#include "WakeOnLAN.h"
+#if __has_include("private.h")
+#include "private.h"
+#endif
 
 #define	nitems(x) (sizeof((x)) / sizeof((x)[0]))
 
@@ -134,6 +138,32 @@ static void scan_device_path_for_g20()
     }
 
     closedir(dir);
+}
+
+static void start_cmd(const char* const args[])
+{
+    posix_spawnattr_t attr;
+    posix_spawnattr_init(&attr);
+    posix_spawnattr_setflags(&attr, POSIX_SPAWN_USEVFORK);
+    posix_spawn(NULL, "/system/bin/cmd", NULL, &attr, (char *const *)args, NULL);
+}
+
+static void launch_activity(const char *intent_package, bool intent_has_component_name)
+{
+    const char* const args[] = { "cmd", "activity", "start", intent_has_component_name ? "-n" : intent_package, intent_has_component_name ? intent_package : NULL, NULL };
+    start_cmd(args);
+}
+
+static void connect_XM3_headset()
+{
+    const char* const args[] = { "cmd", "activity", "startservice", "-n", "pk.q12.tvlowqualitybt/pk.q12.tvlowqualitybt.BluetoothService", "-a", "pk.q12.tvlowqualitybt.ACTION_A2DP_CONNECT", "--es", "alias", "XM3", "--ei", "xm_mode", "-1", NULL };
+    start_cmd(args);
+}
+
+static void launch_settings()
+{
+    const char* const args[] = { "cmd", "activity", "start", "-a", "android.settings.SETTINGS", NULL };
+    start_cmd(args);   
 }
 
 static void daemonise()
@@ -269,7 +299,6 @@ int main(void)
                     const KeyPressMode mode = __predict_true(duration < KEY_HOLD_THRESHOLD_US) ? KEYPRESS_NORMAL : KEYPRESS_LONG_PRESS;
 
                     #define SEND_KEYPRESS(translated_keycode) injectInputEvent(translated_keycode, mode); break
-                    #define SEND_LOG_MESSAGE(translated_keycode) __android_log_print(ANDROID_LOG_VERBOSE, "G20D", __STRING(translated_keycode %d), mode); break
                     switch (press_keycode)
                     {
                         case 0x000c0061: // KEY_SUBTITLE
@@ -290,20 +319,37 @@ int main(void)
                         case 0x000c006b: // KEY_BLUE
                             SEND_KEYPRESS(AKEYCODE_PROG_BLUE);
                         case 0x000c0096: // KEY_TAPE
-                            SEND_LOG_MESSAGE(AKEYCODE_NOTIFICATION);
+                            if (__predict_true(mode == KEYPRESS_NORMAL)) {
+                                injectInputEvent(AKEYCODE_ENTER, KEYPRESS_NORMAL);
+                            } else if (mode == KEYPRESS_LONG_PRESS) {
+                                launch_settings();
+                            }
+                            break;
                         case 0x000c0077: // (YouTube)
-                            SEND_LOG_MESSAGE(AKEYCODE_BUTTON_3);
+                            launch_activity("com.teamsmart.videomanager.tv", false); break;
                         case 0x000c0078: // (Netflix)
-                            SEND_LOG_MESSAGE(AKEYCODE_BUTTON_4);
+                            launch_activity("org.xbmc.kodi/.Splash", true); break;
                         case 0x000c0079: // KEY_KBDILLUMUP (Prime Video)
-                            SEND_LOG_MESSAGE(AKEYCODE_BUTTON_9);
+                            if (__predict_true(mode == KEYPRESS_NORMAL)) {
+                                launch_activity("com.spotify.tv.android", false);
+                            } else if (mode == KEYPRESS_LONG_PRESS) {
+                                launch_activity("com.stremio.one/com.stremio.tv.MainActivity", true);
+                            }
+                            break;
                         case 0x000c007a: // KEY_KBDILLUMDOWN (Google Play)
-                            SEND_LOG_MESSAGE(AKEYCODE_BUTTON_10);
+                            if (__predict_true(mode == KEYPRESS_NORMAL)) {
+                                connect_XM3_headset();
+                            }
+                            #ifdef WOL_MAC_ADDRESS
+                            else if (mode == KEYPRESS_LONG_PRESS) {
+                                WakeOnLAN(WOL_MAC_ADDRESS, "192.168.1.255");
+                            }
+                            #endif
+                            break;
                         default:
                             break;
                     }
                     #undef SEND_KEYPRESS
-                    #undef SEND_LOG_MESSAGE
 
                     press_keycode = 0;
                     press_usec = 0;
