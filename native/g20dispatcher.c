@@ -19,12 +19,11 @@
 #include <unistd.h>
 #include <spawn.h>
 #include <android/keycodes.h>
+
 #include "BinderGlue.h"
 #include "IsKodiTopmostApp.h"
 #include "WakeOnLAN.h"
-#if __has_include("private.h")
 #include "private.h"
-#endif
 
 #define	nitems(x) (sizeof((x)) / sizeof((x)[0]))
 
@@ -152,18 +151,6 @@ static void launch_activity(const char *intent_package, bool intent_has_componen
 {
     const char* const args[] = { "cmd", "activity", "start", intent_has_component_name ? "-n" : intent_package, intent_has_component_name ? intent_package : NULL, NULL };
     start_cmd(args);
-}
-
-static void connect_XM3_headset()
-{
-    const char* const args[] = { "cmd", "activity", "startservice", "-n", "pk.q12.tvlowqualitybt/pk.q12.tvlowqualitybt.BluetoothService", "-a", "pk.q12.tvlowqualitybt.ACTION_A2DP_CONNECT", "--es", "alias", "XM3", "--ei", "xm_mode", "-1", NULL };
-    start_cmd(args);
-}
-
-static void launch_settings()
-{
-    const char* const args[] = { "cmd", "activity", "start", "-a", "android.settings.SETTINGS", NULL };
-    start_cmd(args);   
 }
 
 static void daemonise()
@@ -309,7 +296,7 @@ int main(void)
                             SEND_KEYPRESS(AKEYCODE_PROG_RED);
                         case 0x000c006a: // KEY_GREEN
                             if (__predict_true(mode == KEYPRESS_NORMAL)) {
-                                injectInputEvent(AKEYCODE_MEDIA_PLAY_PAUSE, KEYPRESS_NORMAL);
+                                injectInputEvent(AKEYCODE_ENTER, KEYPRESS_NORMAL);
                             } else if (mode == KEYPRESS_LONG_PRESS) {
                                 injectInputEvent(AKEYCODE_PROG_GREEN, KEYPRESS_NORMAL);
                             }
@@ -320,9 +307,10 @@ int main(void)
                             SEND_KEYPRESS(AKEYCODE_PROG_BLUE);
                         case 0x000c0096: // KEY_TAPE
                             if (__predict_true(mode == KEYPRESS_NORMAL)) {
-                                injectInputEvent(AKEYCODE_ENTER, KEYPRESS_NORMAL);
+                                injectInputEvent(AKEYCODE_MEDIA_PLAY_PAUSE, KEYPRESS_NORMAL);
                             } else if (mode == KEYPRESS_LONG_PRESS) {
-                                launch_settings();
+                                const char* const args[] = { "cmd", "activity", "start", "-a", "android.settings.SETTINGS", NULL };
+                                start_cmd(args);
                             }
                             break;
                         case 0x000c0077: // (YouTube)
@@ -338,7 +326,8 @@ int main(void)
                             break;
                         case 0x000c007a: // KEY_KBDILLUMDOWN (Google Play)
                             if (__predict_true(mode == KEYPRESS_NORMAL)) {
-                                connect_XM3_headset();
+                                const char* const args[] = { "cmd", "activity", "startservice", "-n", "pk.q12.tvlowqualitybt/pk.q12.tvlowqualitybt.BluetoothService", "-a", "pk.q12.tvlowqualitybt.ACTION_A2DP_CONNECT", "--es", "alias", "XM3", "--ei", "xm_mode", "-1", NULL };
+                                start_cmd(args);
                             }
                             #ifdef WOL_MAC_ADDRESS
                             else if (mode == KEYPRESS_LONG_PRESS) {

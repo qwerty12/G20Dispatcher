@@ -23,9 +23,6 @@ import android.sun.security.x509.X500Name;
 import android.sun.security.x509.X509CertImpl;
 import android.sun.security.x509.X509CertInfo;
 
-import android.annotation.NonNull;
-import android.annotation.Nullable;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -55,7 +52,7 @@ import io.github.muntashirakon.adb.AbsAdbConnectionManager;
 public class AdbConnectionManager extends AbsAdbConnectionManager {
     private static AbsAdbConnectionManager INSTANCE;
 
-    public static AbsAdbConnectionManager getInstance(@NonNull Context context) throws Exception {
+    public static AbsAdbConnectionManager getInstance(Context context) throws Exception {
         if (INSTANCE == null) {
             INSTANCE = new AdbConnectionManager(context);
         }
@@ -65,7 +62,7 @@ public class AdbConnectionManager extends AbsAdbConnectionManager {
     private PrivateKey mPrivateKey;
     private Certificate mCertificate;
 
-    private AdbConnectionManager(@NonNull Context context) throws Exception {
+    private AdbConnectionManager(Context context) throws Exception {
         setApi(Build.VERSION.SDK_INT);
         mPrivateKey = readPrivateKeyFromFile(context);
         mCertificate = readCertificateFromFile(context);
@@ -107,26 +104,22 @@ public class AdbConnectionManager extends AbsAdbConnectionManager {
         }
     }
 
-    @NonNull
     @Override
     protected PrivateKey getPrivateKey() {
         return mPrivateKey;
     }
 
-    @NonNull
     @Override
     protected Certificate getCertificate() {
         return mCertificate;
     }
 
-    @NonNull
     @Override
     protected String getDeviceName() {
         return "G20Dispatcher";
     }
 
-    @Nullable
-    private static Certificate readCertificateFromFile(@NonNull Context context)
+    private static Certificate readCertificateFromFile(Context context)
             throws IOException, CertificateException {
         File certFile = new File(context.getFilesDir(), "cert.pem");
         if (!certFile.exists()) return null;
@@ -135,7 +128,7 @@ public class AdbConnectionManager extends AbsAdbConnectionManager {
         }
     }
 
-    private static void writeCertificateToFile(@NonNull Context context, @NonNull Certificate certificate)
+    private static void writeCertificateToFile(Context context, Certificate certificate)
             throws CertificateEncodingException, IOException {
         File certFile = new File(context.getFilesDir(), "cert.pem");
         BASE64Encoder encoder = new BASE64Encoder();
@@ -148,8 +141,7 @@ public class AdbConnectionManager extends AbsAdbConnectionManager {
         }
     }
 
-    @Nullable
-    private static PrivateKey readPrivateKeyFromFile(@NonNull Context context)
+    private static PrivateKey readPrivateKeyFromFile(Context context)
             throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
         File privateKeyFile = new File(context.getFilesDir(), "private.key");
         if (!privateKeyFile.exists()) return null;
@@ -162,7 +154,7 @@ public class AdbConnectionManager extends AbsAdbConnectionManager {
         return keyFactory.generatePrivate(privateKeySpec);
     }
 
-    private static void writePrivateKeyToFile(@NonNull Context context, @NonNull PrivateKey privateKey)
+    private static void writePrivateKeyToFile(Context context, PrivateKey privateKey)
             throws IOException {
         File privateKeyFile = new File(context.getFilesDir(), "private.key");
         try (OutputStream os = new FileOutputStream(privateKeyFile)) {

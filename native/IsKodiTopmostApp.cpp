@@ -1,6 +1,3 @@
-#define _LIBCPP_ABI_NAMESPACE __1
-#define DO_NOT_CHECK_MANUAL_BINDER_INTERFACES
-
 #include <utils/String8.h>
 #include <utils/String16.h>
 #include <binder/Parcel.h>

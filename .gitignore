@@ -17,3 +17,4 @@ local.properties
 /app/release/
 /native/private.h
 .vscode/
+/app/src/main/jniLibs/armeabi-v7a/libg20dispatcher.so

@@ -1,6 +1,3 @@
-#define _LIBCPP_ABI_NAMESPACE __1 // I know, I know, it's a miracle this doesn't cause crashes... for now
-#define DO_NOT_CHECK_MANUAL_BINDER_INTERFACES
-
 #include <stdlib.h>
 #include <sys/cdefs.h>
 #include <binder/IPCThreadState.h>

@@ -84,16 +84,16 @@ The mappings are designed to match the most natural equivalents where possible, 
 | G20 Button            | Outside of Kodi                                            | Inside Kodi (same as Outside if empty)                           |
 |-----------------------|-----------------------------------------------------------|------------------------------------------------------------------|
 | Subtitles      | [`KEYCODE_CAPTIONS`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_CAPTIONS) | [`KEYCODE_T`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_T)                                                      |
-| Info           | [`KEYCODE_INFO`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_INFO)       | `KEYCODE_INFO` (read [Keymap](https://kodi.wiki/view/Keymap) and [this](https://github.com/qwerty12/G20Dispatcher/commit/7b72b0b7ea431aacb753f784a33da204f72843db) to make it work)                                                                                           |
+| Info           | [`KEYCODE_INFO`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_INFO)       | [`KEYCODE_INFO`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_INFO) (read [Keymap](https://kodi.wiki/view/Keymap) and [this](https://github.com/qwerty12/G20Dispatcher/commit/7b72b0b7ea431aacb753f784a33da204f72843db) to make it work)                                                                                           |
 | Red            | [`KEYCODE_PROG_RED`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_RED)   |                                                                  |
-| Green          | [`KEYCODE_MEDIA_PLAY_PAUSE`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_MEDIA_PLAY_PAUSE)<br>[`KEYCODE_PROG_GREEN`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_GREEN) (held) |                                                                                                                                                                                                                   |
+| Green          | [`KEYCODE_ENTER`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_ENTER) (useful for Flutter apps)<br>[`KEYCODE_PROG_GREEN`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_GREEN) (held) |                                                                                                                                                                                                                   |
 | Yellow         | [`KEYCODE_PROG_YELLOW`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_YELLOW) |                                                                  |
 | Blue           | [`KEYCODE_PROG_BLUE`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_BLUE)     |                                                                  |
-| Settings       | [`KEYCODE_ENTER`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_ENTER) (useful for Flutter apps that don't recognise the D-pad center button)<br>Launch TV Settings (held) |                                                  |
+| Settings       | [`KEYCODE_MEDIA_PLAY_PAUSE`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_MEDIA_PLAY_PAUSE)<br>Launch TV Settings (held) |                                                  |
 | YouTube        | Launch [SmartTube](https://github.com/yuliskov/SmartTube) |                                                      |
 | Netflix        | Launch [Kodi](https://kodi.tv/) |                                                      |
 | Prime Video    | Launch [Spotify](https://play.google.com/store/apps/details?id=com.spotify.tv.android)<br>Launch [Stremio](https://play.google.com/store/apps/details?id=com.stremio.one) (held) |                                                      |
-| Google Play    | [Connect to your Bluetooth headset](https://github.com/qwerty12/TVLowQualityBT?tab=readme-ov-file#automating-headset-connection)<br>Send WOL packet (held) |                                                     |
+| Google Play    | [Connect your Bluetooth headset](https://github.com/qwerty12/TVLowQualityBT?tab=readme-ov-file#automating-headset-connection)<br>Send WOL packet (held) |                                                     |
 
 ## Building
 
@@ -110,8 +110,6 @@ Go to the project directory
 ```
 
 ### Building the daemon
-
-(Note: this is optional - a compiled ARMv7 Android 12-targeting binary is already included)
 
 Assuming you have the NDK already set up, go the lib directory and download the needed lib files (substitute as needed if you're building for something other than an ARMv7 Android 12 device)
 
@@ -130,7 +128,9 @@ Go to the native directory and edit the batch file to fix the path to the NDK an
 
 ### Building the accessibility service
 
-Nothing special should be needed to be done here, just open the project in Android Studio or invoke `gradlew` directly.
+To build, make sure the android-34 android.jar from [Reginer's aosp-android-jar](https://github.com/Reginer/aosp-android-jar) is installed. Instructions for doing so can be found [here](https://github.com/1fexd/aosp-android-jar-mirror#installation).
+
+Afterwards, just open the project in Android Studio or invoke `gradlew` directly.
 
 ## Thanks
 
