@@ -1,6 +1,7 @@
 #ifndef PRIVATE_H
 #define PRIVATE_H
 
+#define INPUT_SWITCHER_ACTIVITY ""
 #define WOL_MAC_ADDRESS "XX:XX:XX:XX:XX:XX"
 
 #endif /*PRIVATE_H*/

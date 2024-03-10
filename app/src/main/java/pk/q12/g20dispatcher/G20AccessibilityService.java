@@ -78,7 +78,7 @@ public class G20AccessibilityService extends AccessibilityService {
         executor.execute(() -> {
             if (initialRun) {
                 initialRun = false;
-                SystemClock.sleep(32000);
+                SystemClock.sleep(35000);
             }
 
             for (int i = 0; i < 10; i++) {

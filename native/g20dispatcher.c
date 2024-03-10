@@ -288,6 +288,10 @@ int main(void)
                     #define SEND_KEYPRESS(translated_keycode) injectInputEvent(translated_keycode, mode); break
                     switch (press_keycode)
                     {
+                        #ifdef INPUT_SWITCHER_ACTIVITY
+                        case 0x000c01bb: // (Input)
+                            launch_activity(INPUT_SWITCHER_ACTIVITY, true); break;
+                        #endif
                         case 0x000c0061: // KEY_SUBTITLE
                             SEND_KEYPRESS(IsKodiTopmostApp() ? AKEYCODE_T : AKEYCODE_CAPTIONS);
                         case 0x000c01bd: // KEY_INFO
