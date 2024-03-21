@@ -248,107 +248,118 @@ int main(void)
     for (;;) {
         poll(ufds, nfds, -1);
 
-        if (ufds[0].revents & POLLIN)
+        if (__predict_false(ufds[0].revents & POLLIN))
             read_notify_from_device_path(device_path, ufds[0].fd);
 
-        if (ufds[1].revents & POLLIN)
+        if (__predict_false(ufds[1].revents & POLLIN))
             OnBinderReadReady();
 
-        if (nfds < nitems(ufds)) {
+        if (__predict_false(nfds < nitems(ufds))) {
             if (press_keycode) press_keycode = 0;
             if (press_usec) press_usec = 0;
             continue;
         }
 
-        if (ufds[UFDS_IDX_G20].revents & POLLIN) {
-            struct input_event event;
+        if (__predict_false((ufds[UFDS_IDX_G20].revents & POLLIN) == 0))
+            continue;
 
-            if (__predict_false(read(ufds[UFDS_IDX_G20].fd, &event, sizeof(event)) < (int)sizeof(event))) {
-                fprintf(stderr, "could not get event\n");
+        struct input_event event;
+
+        if (__predict_false(read(ufds[UFDS_IDX_G20].fd, &event, sizeof(event)) < (int)sizeof(event))) {
+            fprintf(stderr, "could not get event\n");
+            continue;
+        }
+
+        if (event.type == EV_MSC) {
+            if (press_keycode == 0) {
+                press_keycode = event.value;
+            } else if (event.value != press_keycode) {
+                press_keycode = 0;
+                press_usec = 0;
+                continue;
+            }
+        }
+
+        if (press_keycode == 0)
+            continue;
+
+        if (event.type != EV_KEY)
+            continue;
+
+        if (press_usec == 0) {
+            if (event.value == 1) {
+                press_usec = (event.input_event_sec * 1000000L) + event.input_event_usec;
                 continue;
             }
 
-            if (event.type == EV_MSC) {
-                if (press_keycode == 0) {
-                    press_keycode = event.value;
-                } else if (event.value != press_keycode) {
-                    press_keycode = 0;
-                    press_usec = 0;
-                    continue;
-                }
-            }
-
-            if (__predict_true(press_keycode > 0)) {
-                if (event.type == EV_KEY && press_usec == 0 && event.value == 1) {
-                    press_usec = (event.input_event_sec * 1000000L) + event.input_event_usec;
-                } else if (event.type == EV_KEY && press_usec != 0 && event.value == 0) {
-                    const suseconds_t duration = ((event.input_event_sec * 1000000L) + event.input_event_usec) - press_usec;
-                    const KeyPressMode mode = __predict_true(duration < KEY_HOLD_THRESHOLD_US) ? KEYPRESS_NORMAL : KEYPRESS_LONG_PRESS;
-
-                    #define SEND_KEYPRESS(translated_keycode) injectInputEvent(translated_keycode, mode); break
-                    switch (press_keycode)
-                    {
-                        #ifdef INPUT_SWITCHER_ACTIVITY
-                        case 0x000c01bb: // (Input)
-                            launch_activity(INPUT_SWITCHER_ACTIVITY, true); break;
-                        #endif
-                        case 0x000c0061: // KEY_SUBTITLE
-                            SEND_KEYPRESS(IsKodiTopmostApp() ? AKEYCODE_T : AKEYCODE_CAPTIONS);
-                        case 0x000c01bd: // KEY_INFO
-                            SEND_KEYPRESS(AKEYCODE_INFO);
-                        case 0x000c0069: // KEY_RED
-                            SEND_KEYPRESS(AKEYCODE_PROG_RED);
-                        case 0x000c006a: // KEY_GREEN
-                            if (__predict_true(mode == KEYPRESS_NORMAL)) {
-                                injectInputEvent(AKEYCODE_ENTER, KEYPRESS_NORMAL);
-                            } else if (mode == KEYPRESS_LONG_PRESS) {
-                                injectInputEvent(AKEYCODE_PROG_GREEN, KEYPRESS_NORMAL);
-                            }
-                            break;
-                        case 0x000c006c: // KEY_YELLOW
-                            SEND_KEYPRESS(AKEYCODE_PROG_YELLOW);
-                        case 0x000c006b: // KEY_BLUE
-                            SEND_KEYPRESS(AKEYCODE_PROG_BLUE);
-                        case 0x000c0096: // KEY_TAPE
-                            if (__predict_true(mode == KEYPRESS_NORMAL)) {
-                                injectInputEvent(AKEYCODE_MEDIA_PLAY_PAUSE, KEYPRESS_NORMAL);
-                            } else if (mode == KEYPRESS_LONG_PRESS) {
-                                const char* const args[] = { "cmd", "activity", "start", "-a", "android.settings.SETTINGS", NULL };
-                                start_cmd(args);
-                            }
-                            break;
-                        case 0x000c0077: // (YouTube)
-                            launch_activity("com.teamsmart.videomanager.tv", false); break;
-                        case 0x000c0078: // (Netflix)
-                            launch_activity("org.xbmc.kodi/.Splash", true); break;
-                        case 0x000c0079: // KEY_KBDILLUMUP (Prime Video)
-                            if (__predict_true(mode == KEYPRESS_NORMAL)) {
-                                launch_activity("com.spotify.tv.android", false);
-                            } else if (mode == KEYPRESS_LONG_PRESS) {
-                                launch_activity("com.stremio.one/com.stremio.tv.MainActivity", true);
-                            }
-                            break;
-                        case 0x000c007a: // KEY_KBDILLUMDOWN (Google Play)
-                            if (__predict_true(mode == KEYPRESS_NORMAL)) {
-                                const char* const args[] = { "cmd", "activity", "startservice", "-n", "pk.q12.tvlowqualitybt/pk.q12.tvlowqualitybt.BluetoothService", "-a", "pk.q12.tvlowqualitybt.ACTION_A2DP_CONNECT", "--es", "alias", "XM3", "--ei", "xm_mode", "-1", NULL };
-                                start_cmd(args);
-                            }
-                            #ifdef WOL_MAC_ADDRESS
-                            else if (mode == KEYPRESS_LONG_PRESS) {
-                                WakeOnLAN(WOL_MAC_ADDRESS, "192.168.1.255");
-                            }
-                            #endif
-                            break;
-                        default:
-                            break;
-                    }
-                    #undef SEND_KEYPRESS
-
-                    press_keycode = 0;
-                    press_usec = 0;
-                }
-            }
+            if (event.value != 0)
+                continue;
         }
+
+        const suseconds_t duration = ((event.input_event_sec * 1000000L) + event.input_event_usec) - press_usec;
+        const KeyPressMode mode = __predict_true(duration < KEY_HOLD_THRESHOLD_US) ? KEYPRESS_NORMAL : KEYPRESS_LONG_PRESS;
+
+        #define SEND_KEYPRESS(translated_keycode) injectInputEvent(translated_keycode, mode); break
+        switch (press_keycode)
+        {
+            #ifdef INPUT_SWITCHER_ACTIVITY
+            case 0x000c01bb: // (Input)
+                launch_activity(INPUT_SWITCHER_ACTIVITY, true); break;
+            #endif
+            case 0x000c0061: // KEY_SUBTITLE
+                SEND_KEYPRESS(IsKodiTopmostApp() ? AKEYCODE_T : AKEYCODE_CAPTIONS);
+            case 0x000c01bd: // KEY_INFO
+                SEND_KEYPRESS(AKEYCODE_INFO);
+            case 0x000c0069: // KEY_RED
+                SEND_KEYPRESS(AKEYCODE_PROG_RED);
+            case 0x000c006a: // KEY_GREEN
+                if (__predict_true(mode == KEYPRESS_NORMAL)) {
+                    injectInputEvent(AKEYCODE_ENTER, KEYPRESS_NORMAL);
+                } else if (mode == KEYPRESS_LONG_PRESS) {
+                    injectInputEvent(AKEYCODE_PROG_GREEN, KEYPRESS_NORMAL);
+                }
+                break;
+            case 0x000c006c: // KEY_YELLOW
+                SEND_KEYPRESS(AKEYCODE_PROG_YELLOW);
+            case 0x000c006b: // KEY_BLUE
+                SEND_KEYPRESS(AKEYCODE_PROG_BLUE);
+            case 0x000c0096: // KEY_TAPE
+                if (__predict_true(mode == KEYPRESS_NORMAL)) {
+                    injectInputEvent(AKEYCODE_MEDIA_PLAY_PAUSE, KEYPRESS_NORMAL);
+                } else if (mode == KEYPRESS_LONG_PRESS) {
+                    const char* const args[] = { "cmd", "activity", "start", "-a", "android.settings.SETTINGS", NULL };
+                    start_cmd(args);
+                }
+                break;
+            case 0x000c0077: // (YouTube)
+                launch_activity("com.teamsmart.videomanager.tv", false); break;
+            case 0x000c0078: // (Netflix)
+                launch_activity("org.xbmc.kodi/.Splash", true); break;
+            case 0x000c0079: // KEY_KBDILLUMUP (Prime Video)
+                if (__predict_true(mode == KEYPRESS_NORMAL)) {
+                    launch_activity("com.spotify.tv.android", false);
+                } else if (mode == KEYPRESS_LONG_PRESS) {
+                    launch_activity("com.stremio.one/com.stremio.tv.MainActivity", true);
+                }
+                break;
+            case 0x000c007a: // KEY_KBDILLUMDOWN (Google Play)
+                if (__predict_true(mode == KEYPRESS_NORMAL)) {
+                    const char* const args[] = { "cmd", "activity", "startservice", "-n", "pk.q12.tvlowqualitybt/pk.q12.tvlowqualitybt.BluetoothService", "-a", "pk.q12.tvlowqualitybt.ACTION_A2DP_CONNECT", "--es", "alias", "XM3", "--ei", "xm_mode", "-1", NULL };
+                    start_cmd(args);
+                }
+                #ifdef WOL_MAC_ADDRESS
+                else if (mode == KEYPRESS_LONG_PRESS) {
+                    WakeOnLAN(WOL_MAC_ADDRESS, "192.168.1.255");
+                }
+                #endif
+                break;
+            default:
+                break;
+        }
+        #undef SEND_KEYPRESS
+
+        press_keycode = 0;
+        press_usec = 0;
     }
 
     return EXIT_SUCCESS;

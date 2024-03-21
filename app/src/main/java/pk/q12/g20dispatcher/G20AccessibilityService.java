@@ -81,12 +81,12 @@ public class G20AccessibilityService extends AccessibilityService {
                 SystemClock.sleep(35000);
             }
 
-            for (int i = 0; i < 10; i++) {
-                if ("running".equals(SystemProperties.get("init.svc.adbd")))
-                    break;
-
+            for (int i = 0; i < 15; ++i) {
                 if (executor.isShutdown())
                     return;
+
+                if ("running".equals(SystemProperties.get("init.svc.adbd")))
+                    break;
 
                 SystemClock.sleep(1000);
             }
@@ -132,11 +132,11 @@ public class G20AccessibilityService extends AccessibilityService {
             // Yeah... You can't use FileObserver if the target doesn't
             // already exist, and this block otherwise seemed to be ran
             // before ADB finished
-            for (int i = 0; i < 60; i++) {
-                SystemClock.sleep(1000);
-
+            for (int i = 0; i < 60; ++i) {
                 if (executor.isShutdown())
                     return;
+
+                SystemClock.sleep(1000);
 
                 if (fileG20.isDirectory()) {
                     isProbablyRunning = true;
