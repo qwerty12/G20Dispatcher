@@ -83,17 +83,16 @@ The mappings are designed to match the most natural equivalents where possible, 
 
 | G20 Button            | Outside of Kodi                                            | Inside Kodi (same as Outside if empty)                           |
 |-----------------------|-----------------------------------------------------------|------------------------------------------------------------------|
-| Subtitles      | [`KEYCODE_CAPTIONS`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_CAPTIONS) | [`KEYCODE_T`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_T)                                                      |
+| Input      | Launch Activity defined as `INPUT_SWITCHER_ACTIVITY` in private.h | 
+| Subtitles      | [`KEYCODE_CAPTIONS`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_CAPTIONS) | [`KEYCODE_T`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_T)<br>[`KEYCODE_L`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_L) (held)                                                      |
 | Info           | [`KEYCODE_INFO`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_INFO)       | [`KEYCODE_INFO`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_INFO) (read [Keymap](https://kodi.wiki/view/Keymap) and [this](https://github.com/qwerty12/G20Dispatcher/commit/7b72b0b7ea431aacb753f784a33da204f72843db) to make it work)                                                                                           |
 | Red            | [`KEYCODE_PROG_RED`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_RED)   |                                                                  |
-| Green          | [`KEYCODE_ENTER`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_ENTER) (useful for Flutter apps)<br>[`KEYCODE_PROG_GREEN`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_GREEN) (held) |                                                                                                                                                                                                                   |
+| Green          | [`KEYCODE_PROG_GREEN`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_GREEN) |                                                                                                                                                                                                                   |
 | Yellow         | [`KEYCODE_PROG_YELLOW`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_YELLOW) |                                                                  |
-| Blue           | [`KEYCODE_PROG_BLUE`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_BLUE)     |                                                                  |
 | Settings       | [`KEYCODE_MEDIA_PLAY_PAUSE`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_MEDIA_PLAY_PAUSE)<br>Launch TV Settings (held) |                                                  |
 | YouTube        | Launch [SmartTube](https://github.com/yuliskov/SmartTube) |                                                      |
 | Netflix        | Launch [Kodi](https://kodi.tv/) |                                                      |
 | Prime Video    | Launch [Spotify](https://play.google.com/store/apps/details?id=com.spotify.tv.android)<br>Launch [Stremio](https://play.google.com/store/apps/details?id=com.stremio.one) (held) |                                                      |
-| Google Play    | [Connect your Bluetooth headset](https://github.com/qwerty12/TVLowQualityBT?tab=readme-ov-file#automating-headset-connection)<br>Send WOL packet (held) |                                                     |
 
 ## Building
 
@@ -142,4 +141,3 @@ Afterwards, just open the project in Android Studio or invoke `gradlew` directly
  - [readme.so](https://readme.so/) - the base of what you're reading right now
  - [KeyTester](https://github.com/a13ssandr0/KeyTester) - useful for quickly seeing what's recieved by Android
  - ChatGPT
- - [GramThanos's WakeOnLAN](https://github.com/GramThanos/WakeOnLAN) - simple, MIT-licensed C WOL packet sender

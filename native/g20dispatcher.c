@@ -22,7 +22,6 @@
 
 #include "BinderGlue.h"
 #include "IsKodiTopmostApp.h"
-#include "WakeOnLAN.h"
 #include "private.h"
 
 #define	nitems(x) (sizeof((x)) / sizeof((x)[0]))
@@ -304,25 +303,29 @@ int main(void)
         {
             #ifdef INPUT_SWITCHER_ACTIVITY
             case 0x000c01bb: // (Input)
-                launch_activity(INPUT_SWITCHER_ACTIVITY, true); break;
+                if (__predict_true(mode == KEYPRESS_NORMAL))
+                    launch_activity(INPUT_SWITCHER_ACTIVITY, true);
+                break;
             #endif
             case 0x000c0061: // KEY_SUBTITLE
-                SEND_KEYPRESS(IsKodiTopmostApp() ? AKEYCODE_T : AKEYCODE_CAPTIONS);
+                if (__predict_true(IsKodiTopmostApp())) {
+                    if (__predict_true(mode == KEYPRESS_NORMAL)) {
+                        injectInputEvent(AKEYCODE_T, KEYPRESS_NORMAL);
+                    } else if (mode == KEYPRESS_LONG_PRESS) {
+                        injectInputEvent(AKEYCODE_L, KEYPRESS_NORMAL);
+                    }
+                    break;
+                } else {
+                    SEND_KEYPRESS(AKEYCODE_CAPTIONS);
+                }
             case 0x000c01bd: // KEY_INFO
                 SEND_KEYPRESS(AKEYCODE_INFO);
             case 0x000c0069: // KEY_RED
                 SEND_KEYPRESS(AKEYCODE_PROG_RED);
             case 0x000c006a: // KEY_GREEN
-                if (__predict_true(mode == KEYPRESS_NORMAL)) {
-                    injectInputEvent(AKEYCODE_ENTER, KEYPRESS_NORMAL);
-                } else if (mode == KEYPRESS_LONG_PRESS) {
-                    injectInputEvent(AKEYCODE_PROG_GREEN, KEYPRESS_NORMAL);
-                }
-                break;
+                SEND_KEYPRESS(AKEYCODE_PROG_GREEN);
             case 0x000c006c: // KEY_YELLOW
                 SEND_KEYPRESS(AKEYCODE_PROG_YELLOW);
-            case 0x000c006b: // KEY_BLUE
-                SEND_KEYPRESS(AKEYCODE_PROG_BLUE);
             case 0x000c0096: // KEY_TAPE
                 if (__predict_true(mode == KEYPRESS_NORMAL)) {
                     injectInputEvent(AKEYCODE_MEDIA_PLAY_PAUSE, KEYPRESS_NORMAL);
@@ -341,17 +344,6 @@ int main(void)
                 } else if (mode == KEYPRESS_LONG_PRESS) {
                     launch_activity("com.stremio.one/com.stremio.tv.MainActivity", true);
                 }
-                break;
-            case 0x000c007a: // KEY_KBDILLUMDOWN (Google Play)
-                if (__predict_true(mode == KEYPRESS_NORMAL)) {
-                    const char* const args[] = { "cmd", "activity", "startservice", "-n", "pk.q12.tvlowqualitybt/pk.q12.tvlowqualitybt.BluetoothService", "-a", "pk.q12.tvlowqualitybt.ACTION_A2DP_CONNECT", "--es", "alias", "XM3", "--ei", "xm_mode", "-1", NULL };
-                    start_cmd(args);
-                }
-                #ifdef WOL_MAC_ADDRESS
-                else if (mode == KEYPRESS_LONG_PRESS) {
-                    WakeOnLAN(WOL_MAC_ADDRESS, "192.168.1.255");
-                }
-                #endif
                 break;
             default:
                 break;
