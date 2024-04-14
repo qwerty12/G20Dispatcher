@@ -104,11 +104,12 @@ public class G20AccessibilityService extends AccessibilityService {
                 adbShellStream = manager.openStream(LocalServices.SHELL);
 
                 try (final OutputStream os = adbShellStream.openOutputStream()) {
-                    final String stringBuilder = DAEMON_TERMINATION_COMMAND +
-                            ";rm -rf " + DAEMON_TMPDIR + "/*" +
-                            ";mkdir " + DAEMON_TMPDIR +
-                            ";chmod 775 " + DAEMON_TMPDIR + "/" +
-                            "&&exec " + getApplicationContext().getApplicationInfo().nativeLibraryDir + "/" + DAEMON_BASENAME + "\n";
+                    final String stringBuilder =
+                            DAEMON_TERMINATION_COMMAND
+                            + ";rm -rf " + DAEMON_TMPDIR + "/*"
+                            + ";mkdir " + DAEMON_TMPDIR
+                            + ";chmod 775 " + DAEMON_TMPDIR + "/"
+                            + "&&exec " + getApplicationContext().getApplicationInfo().nativeLibraryDir + "/" + DAEMON_BASENAME + "\n";
                     os.write(stringBuilder.getBytes(StandardCharsets.UTF_8));
                 }
                 adbShellStream.flush();

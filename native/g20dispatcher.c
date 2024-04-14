@@ -319,7 +319,16 @@ int main(void)
                     SEND_KEYPRESS(AKEYCODE_CAPTIONS);
                 }
             case 0x000c01bd: // KEY_INFO
-                SEND_KEYPRESS(AKEYCODE_INFO);
+                if (__predict_true(IsKodiTopmostApp())) {
+                    if (__predict_true(mode == KEYPRESS_NORMAL)) {
+                        injectInputEvent(AKEYCODE_INFO, KEYPRESS_NORMAL);
+                    } else if (mode == KEYPRESS_LONG_PRESS) {
+                        injectInputEvent(AKEYCODE_O, KEYPRESS_NORMAL);
+                    }
+                    break;
+                } else {
+                    SEND_KEYPRESS(AKEYCODE_INFO);
+                }
             case 0x000c0069: // KEY_RED
                 SEND_KEYPRESS(AKEYCODE_PROG_RED);
             case 0x000c006a: // KEY_GREEN
