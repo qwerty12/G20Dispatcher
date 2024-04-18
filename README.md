@@ -92,7 +92,6 @@ The mappings are designed to match the most natural equivalents where possible, 
 | Settings       | [`KEYCODE_MEDIA_PLAY_PAUSE`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_MEDIA_PLAY_PAUSE)<br>Launch TV Settings (held) |                                                  |
 | YouTube        | Launch [SmartTube](https://github.com/yuliskov/SmartTube) |                                                      |
 | Netflix        | Launch [Kodi](https://kodi.tv/) |                                                      |
-| Prime Video    | Launch [Spotify](https://play.google.com/store/apps/details?id=com.spotify.tv.android)<br>Launch [Stremio](https://play.google.com/store/apps/details?id=com.stremio.one) (held) |                                                      |
 
 ## Building
 

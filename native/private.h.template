@@ -2,5 +2,6 @@
 #define PRIVATE_H
 
 #define INPUT_SWITCHER_ACTIVITY ""
+#define NETFLIX_LONG_PRESS_ACTIVITY ""
 
 #endif /*PRIVATE_H*/

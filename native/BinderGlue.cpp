@@ -36,10 +36,10 @@ class BpInputManager: public android::BpInterface<IInputManager>
                     break;
                 /*case AINPUT_EVENT_TYPE_MOTION:
                     writeMotionEventToParcel((MotionEvent &) ev, data);
-                    break;
-                default:
-                    ALOGE("unknown input type: %d", type);
                     break;*/
+                default:
+                    //ALOGE("unknown input type: %d", type);
+                    return false;
             }
             data.writeInt32(mode);
             remote()->transact(INJECT_INPUT_EVENT, data, &reply);

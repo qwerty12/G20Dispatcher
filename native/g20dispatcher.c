@@ -22,7 +22,11 @@
 
 #include "BinderGlue.h"
 #include "IsKodiTopmostApp.h"
-#include "private.h"
+#if defined __has_include
+#  if __has_include ("private.h")
+#    include "private.h"
+#  endif
+#endif
 
 #define	nitems(x) (sizeof((x)) / sizeof((x)[0]))
 
@@ -51,7 +55,7 @@ static bool open_g20_device(const char *devname)
     char name[80];
     name[sizeof(name) - 1] = '\0';
 
-    int fd = open(devname, O_RDONLY | O_CLOEXEC);
+    const int fd = open(devname, O_RDONLY | O_CLOEXEC);
     if (fd >= 0) {
         if (ioctl(fd, EVIOCGNAME(sizeof(name) - 1), name) >= 1 && !strcmp(name, "RemoteG20 Consumer Control")) {
             close_g20_device();
@@ -146,9 +150,9 @@ static void start_cmd(const char* const args[])
     posix_spawn(NULL, "/system/bin/cmd", NULL, &attr, (char *const *)args, NULL);
 }
 
-static void launch_activity(const char *intent_package, bool intent_has_component_name)
+static void launch_activity(const char *intent_package)
 {
-    const char* const args[] = { "cmd", "activity", "start", intent_has_component_name ? "-n" : intent_package, intent_has_component_name ? intent_package : NULL, NULL };
+    const char* const args[] = { "cmd", "activity", "start", intent_package, NULL };
     start_cmd(args);
 }
 
@@ -215,7 +219,7 @@ int main(void)
 
     daemonise();
 
-    int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    const int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (fd == -1) {
         perror("Error opening file");
         return EXIT_FAILURE;
@@ -233,10 +237,8 @@ int main(void)
     for (size_t i = 0; i < nitems(ufds); ++i)
         ufds[i].events = POLLIN;
 
-    if (inotify_add_watch(ufds[0].fd, device_path, IN_DELETE | IN_CREATE) < 0) {
-        fprintf(stderr, "could not add watch for %s, %s\n", device_path, strerror(errno));
+    if (inotify_add_watch(ufds[0].fd, device_path, IN_DELETE | IN_CREATE) < 0)
         return EXIT_FAILURE;
-    }
 
     scan_device_path_for_g20();
     connectInputService();
@@ -264,10 +266,8 @@ int main(void)
 
         struct input_event event;
 
-        if (__predict_false(read(ufds[UFDS_IDX_G20].fd, &event, sizeof(event)) < (int)sizeof(event))) {
-            fprintf(stderr, "could not get event\n");
+        if (__predict_false(read(ufds[UFDS_IDX_G20].fd, &event, sizeof(event)) < (int)sizeof(event)))
             continue;
-        }
 
         if (event.type == EV_MSC) {
             if (press_keycode == 0) {
@@ -304,7 +304,7 @@ int main(void)
             #ifdef INPUT_SWITCHER_ACTIVITY
             case 0x000c01bb: // (Input)
                 if (__predict_true(mode == KEYPRESS_NORMAL))
-                    launch_activity(INPUT_SWITCHER_ACTIVITY, true);
+                    launch_activity(INPUT_SWITCHER_ACTIVITY);
                 break;
             #endif
             case 0x000c0061: // KEY_SUBTITLE
@@ -344,15 +344,16 @@ int main(void)
                 }
                 break;
             case 0x000c0077: // (YouTube)
-                launch_activity("com.teamsmart.videomanager.tv", false); break;
+                launch_activity("com.teamsmart.videomanager.tv"); break;
             case 0x000c0078: // (Netflix)
-                launch_activity("org.xbmc.kodi/.Splash", true); break;
-            case 0x000c0079: // KEY_KBDILLUMUP (Prime Video)
                 if (__predict_true(mode == KEYPRESS_NORMAL)) {
-                    launch_activity("com.spotify.tv.android", false);
-                } else if (mode == KEYPRESS_LONG_PRESS) {
-                    launch_activity("com.stremio.one/com.stremio.tv.MainActivity", true);
+                    launch_activity("org.xbmc.kodi/.Splash");
                 }
+                #ifdef NETFLIX_LONG_PRESS_ACTIVITY
+                else if (mode == KEYPRESS_LONG_PRESS) {
+                    launch_activity(NETFLIX_LONG_PRESS_ACTIVITY);
+                }
+                #endif
                 break;
             default:
                 break;
