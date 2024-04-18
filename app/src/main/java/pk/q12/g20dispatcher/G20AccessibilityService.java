@@ -1,6 +1,7 @@
 package pk.q12.g20dispatcher;
 
 import android.accessibilityservice.AccessibilityService;
+import android.content.Context;
 import android.content.Intent;
 import android.os.FileObserver;
 import android.os.SystemClock;
@@ -47,8 +48,8 @@ public class G20AccessibilityService extends AccessibilityService {
     private boolean isProbablyRunning = false;
 
     @Override
-    public void onCreate() {
-        super.onCreate();
+    protected void attachBaseContext(final Context newBase) {
+        super.attachBaseContext(newBase);
         HiddenApiBypass.addHiddenApiExemptions("Lcom/android/org/conscrypt/Conscrypt");
     }
 
