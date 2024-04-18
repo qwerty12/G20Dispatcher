@@ -1,7 +1,7 @@
 [versions]
 agp = "8.3.2"
 hiddenapibypass = "4.3"
-libadbAndroid = "7d2d8d872d"
+libadbAndroid = "8a906cfede"
 sunSecurityAndroid = "1.1"
 
 [libraries]
