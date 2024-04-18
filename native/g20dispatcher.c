@@ -321,7 +321,7 @@ int main(void)
             case 0x000c01bd: // KEY_INFO
                 if (__predict_true(IsKodiTopmostApp())) {
                     if (__predict_true(mode == KEYPRESS_NORMAL)) {
-                        injectInputEvent(AKEYCODE_INFO, KEYPRESS_NORMAL);
+                        injectInputEvent(AKEYCODE_I, KEYPRESS_NORMAL);
                     } else if (mode == KEYPRESS_LONG_PRESS) {
                         injectInputEvent(AKEYCODE_O, KEYPRESS_NORMAL);
                     }
