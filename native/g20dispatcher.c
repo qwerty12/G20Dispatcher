@@ -215,18 +215,17 @@ static void daemonise()
 int main(void)
 {
     // Apps can access files in subdirectories of /data/local/tmp/ but not those in /data/local/tmp/ itself
-    const char *filename = "/data/local/tmp/.g20dispatcher/sentinel";
+    const char *sentinel_path = "/data/local/tmp/.g20dispatcher/sentinel";
 
     daemonise();
 
-    const int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-    if (fd == -1) {
-        perror("Error opening file");
+    if (open(sentinel_path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH) == -1) {
+        perror("Error opening sentinel");
         return EXIT_FAILURE;
     }
 
-    if (unlink(filename) == -1) {
-        perror("Error unlinking file");
+    if (unlink(sentinel_path) == -1) {
+        perror("Error unlinking sentinel");
         return EXIT_FAILURE;
     }
 

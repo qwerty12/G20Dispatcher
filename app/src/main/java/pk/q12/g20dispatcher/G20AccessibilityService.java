@@ -25,23 +25,22 @@ import io.github.muntashirakon.adb.AdbStream;
 import io.github.muntashirakon.adb.LocalServices;
 import io.github.muntashirakon.adb.android.AndroidUtils;
 
-public class G20AccessibilityService extends AccessibilityService {
+public final class G20AccessibilityService extends AccessibilityService {
     private static final String DAEMON_TMPDIR = "/data/local/tmp/.g20dispatcher";
     private static final String DAEMON_BASENAME = "libg20dispatcher.so";
     private static final String DAEMON_TERMINATION_COMMAND = "killall " + DAEMON_BASENAME;
     private static final Set<Integer> blockedScanCodes = Set.of(
-            370, // KEY_SUBTITLE
-            358, // KEY_INFO
-            398, // KEY_RED
-            399, // KEY_GREEN
-            400, // KEY_YELLOW
-            401, // KEY_BLUE
-            384, // KEY_TAPE
-            240, // YouTube and Netflix
-            230, // KEY_KBDILLUMUP (Prime Video)
-            229  // KEY_KBDILLUMDOWN (Google Play)
+        370, // KEY_SUBTITLE
+        358, // KEY_INFO
+        398, // KEY_RED
+        399, // KEY_GREEN
+        400, // KEY_YELLOW
+        401, // KEY_BLUE
+        384, // KEY_TAPE
+        240, // Input, YouTube and Netflix
+        230, // KEY_KBDILLUMUP (Prime Video)
+        229  // KEY_KBDILLUMDOWN (Google Play)
     );
-    private static boolean initialRun = true;
     private final File fileG20 = new File(DAEMON_TMPDIR + "/");
     private ThreadPoolExecutor executor = null;
     private FileObserver fileObserverG20 = null;
@@ -67,8 +66,14 @@ public class G20AccessibilityService extends AccessibilityService {
 
                 isProbablyRunning = false;
                 stopWatching();
-                SystemClock.sleep(10000);
-                startG20Dispatcher();
+                try {
+                    Thread.sleep(5000);
+                } catch (final InterruptedException e) {
+                    return;
+                }
+
+                if (fileObserverG20 != null)
+                    startG20Dispatcher();
             }
         };
 
@@ -77,21 +82,28 @@ public class G20AccessibilityService extends AccessibilityService {
 
     private void startG20Dispatcher() {
         executor.execute(() -> {
-            if (initialRun) {
-                initialRun = false;
-                SystemClock.sleep(35000);
+            if (SystemClock.uptimeMillis() < 100000) {
+                try {
+                    Thread.sleep(30000);
+                } catch (final InterruptedException e) {
+                    return;
+                }
             }
 
             for (int i = 0; i < 15; ++i) {
                 if (executor.isShutdown())
                     return;
 
-                if ("running".equals(SystemProperties.get("init.svc.adbd")))
+                if (adbRunning())
                     break;
 
-                SystemClock.sleep(1000);
+                try {
+                    Thread.sleep(1000);
+                } catch (final InterruptedException e) {
+                    return;
+                }
             }
-            if (!"running".equals(SystemProperties.get("init.svc.adbd")))
+            if (!adbRunning())
                 return;
 
             AbsAdbConnectionManager manager = null;
@@ -103,6 +115,9 @@ public class G20AccessibilityService extends AccessibilityService {
                     throw new IOException("ADB connection failed");
 
                 adbShellStream = manager.openStream(LocalServices.SHELL);
+
+                if (executor.isShutdown())
+                    return;
 
                 try (final OutputStream os = adbShellStream.openOutputStream()) {
                     final String stringBuilder =
@@ -138,10 +153,17 @@ public class G20AccessibilityService extends AccessibilityService {
                 if (executor.isShutdown())
                     return;
 
-                SystemClock.sleep(1000);
+                try {
+                    Thread.sleep(1000);
+                } catch (final InterruptedException e) {
+                    return;
+                }
 
                 if (fileG20.isDirectory()) {
                     isProbablyRunning = true;
+
+                    if (executor.isShutdown())
+                        return;
 
                     if (fileObserverG20 != null)
                         fileObserverG20.startWatching();
@@ -164,16 +186,22 @@ public class G20AccessibilityService extends AccessibilityService {
             fileObserverG20 = null;
         }
 
-        if ((isProbablyRunning) || (executor != null && executor.getActiveCount() != 0)) {
-            if (executor.getActiveCount() != 0) { // not reliable, I know
+        final boolean executorActive = executor != null && executor.getActiveCount() != 0;
+        if (isProbablyRunning || executorActive) {
+            if (executorActive) { // not reliable, I know
+                boolean shutdown;
                 executor.shutdown();
                 try {
-                    executor.awaitTermination(5, TimeUnit.SECONDS);
-                } catch (final InterruptedException ignored) {}
+                    shutdown = executor.awaitTermination(5, TimeUnit.SECONDS);
+                } catch (final InterruptedException e) {
+                    shutdown = true;
+                }
+                if (!shutdown)
+                    executor.shutdownNow();
                 executor = null;
             }
 
-            if ("running".equals(SystemProperties.get("init.svc.adbd"))) {
+            if (adbRunning()) {
                 final Thread thread = new Thread(() -> {
                     try {
                         final AbsAdbConnectionManager manager = AdbConnectionManager.getInstance(getApplication());
@@ -189,10 +217,16 @@ public class G20AccessibilityService extends AccessibilityService {
                 try {
                     thread.join(5000);
                 } catch (final InterruptedException ignored) {}
+                if (thread.isAlive())
+                    thread.interrupt();
             }
         }
 
         return super.onUnbind(intent);
+    }
+
+    private static boolean adbRunning() {
+        return "running".equals(SystemProperties.get("init.svc.adbd"));
     }
 
     @Override

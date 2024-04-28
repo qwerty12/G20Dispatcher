@@ -24,12 +24,11 @@ import android.sun.security.x509.X509CertImpl;
 import android.sun.security.x509.X509CertInfo;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -49,10 +48,10 @@ import java.util.Random;
 
 import io.github.muntashirakon.adb.AbsAdbConnectionManager;
 
-class AdbConnectionManager extends AbsAdbConnectionManager {
+final class AdbConnectionManager extends AbsAdbConnectionManager {
     private static AbsAdbConnectionManager INSTANCE;
 
-    static AbsAdbConnectionManager getInstance(Context context) throws Exception {
+    static AbsAdbConnectionManager getInstance(final Context context) throws Exception {
         if (INSTANCE == null) {
             INSTANCE = new AdbConnectionManager(context);
         }
@@ -75,7 +74,7 @@ class AdbConnectionManager extends AbsAdbConnectionManager {
             PublicKey publicKey = generateKeyPair.getPublic();
             mPrivateKey = generateKeyPair.getPrivate();
             // Generate a new certificate
-            String subject = "CN=G20Dispatcher";
+            String subject = "CN=" + getDeviceName();
             String algorithmName = "SHA512withRSA";
             long expiryDate = System.currentTimeMillis() + 86400000;
             CertificateExtensions certificateExtensions = new CertificateExtensions();
@@ -123,7 +122,7 @@ class AdbConnectionManager extends AbsAdbConnectionManager {
             throws IOException, CertificateException {
         File certFile = new File(context.getFilesDir(), "cert.pem");
         if (!certFile.exists()) return null;
-        try (InputStream cert = new FileInputStream(certFile)) {
+        try (InputStream cert = Files.newInputStream(certFile.toPath())) {
             return CertificateFactory.getInstance("X.509").generateCertificate(cert);
         }
     }
@@ -132,7 +131,7 @@ class AdbConnectionManager extends AbsAdbConnectionManager {
             throws CertificateEncodingException, IOException {
         File certFile = new File(context.getFilesDir(), "cert.pem");
         BASE64Encoder encoder = new BASE64Encoder();
-        try (OutputStream os = new FileOutputStream(certFile)) {
+        try (OutputStream os = Files.newOutputStream(certFile.toPath())) {
             os.write(X509Factory.BEGIN_CERT.getBytes(StandardCharsets.UTF_8));
             os.write('\n');
             encoder.encode(certificate.getEncoded(), os);
@@ -146,7 +145,7 @@ class AdbConnectionManager extends AbsAdbConnectionManager {
         File privateKeyFile = new File(context.getFilesDir(), "private.key");
         if (!privateKeyFile.exists()) return null;
         byte[] privKeyBytes = new byte[(int) privateKeyFile.length()];
-        try (InputStream is = new FileInputStream(privateKeyFile)) {
+        try (InputStream is = Files.newInputStream(privateKeyFile.toPath())) {
             is.read(privKeyBytes);
         }
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
@@ -157,7 +156,7 @@ class AdbConnectionManager extends AbsAdbConnectionManager {
     private static void writePrivateKeyToFile(Context context, PrivateKey privateKey)
             throws IOException {
         File privateKeyFile = new File(context.getFilesDir(), "private.key");
-        try (OutputStream os = new FileOutputStream(privateKeyFile)) {
+        try (OutputStream os = Files.newOutputStream(privateKeyFile.toPath())) {
             os.write(privateKey.getEncoded());
         }
     }
