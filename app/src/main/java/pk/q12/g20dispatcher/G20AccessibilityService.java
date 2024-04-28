@@ -181,7 +181,7 @@ public class G20AccessibilityService extends AccessibilityService {
                         if (!manager.connect(AndroidUtils.getHostIpAddress(getApplication()), 5555))
                             return;
 
-                        manager.openStream("shell:" + DAEMON_TERMINATION_COMMAND).close();
+                        manager.openStream("exec:" + DAEMON_TERMINATION_COMMAND).close();
                         manager.disconnect();
                     } catch (final Throwable ignored) {}
                 });

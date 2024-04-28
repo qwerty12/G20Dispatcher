@@ -49,10 +49,10 @@ import java.util.Random;
 
 import io.github.muntashirakon.adb.AbsAdbConnectionManager;
 
-public class AdbConnectionManager extends AbsAdbConnectionManager {
+class AdbConnectionManager extends AbsAdbConnectionManager {
     private static AbsAdbConnectionManager INSTANCE;
 
-    public static AbsAdbConnectionManager getInstance(Context context) throws Exception {
+    static AbsAdbConnectionManager getInstance(Context context) throws Exception {
         if (INSTANCE == null) {
             INSTANCE = new AdbConnectionManager(context);
         }
