@@ -84,13 +84,13 @@ public final class G20AccessibilityService extends AccessibilityService {
         executor.execute(() -> {
             if (SystemClock.uptimeMillis() < 100000) {
                 try {
-                    Thread.sleep(30000);
+                    Thread.sleep(35000);
                 } catch (final InterruptedException e) {
                     return;
                 }
             }
 
-            for (int i = 0; i < 15; ++i) {
+            for (int i = 0; i < 60; ++i) {
                 if (executor.isShutdown())
                     return;
 
