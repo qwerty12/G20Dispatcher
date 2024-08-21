@@ -152,7 +152,7 @@ static void start_cmd(const char* const args[])
 
 static void launch_activity(const char *intent_package)
 {
-    const char* const args[] = { "cmd", "activity", "start", intent_package, NULL };
+    const char* const args[] = { "cmd", "activity", "start", "--activity-previous-is-top", intent_package, NULL };
     start_cmd(args);
 }
 
@@ -338,12 +338,17 @@ int main(void)
                 if (__predict_true(mode == KEYPRESS_NORMAL)) {
                     injectInputEvent(AKEYCODE_MEDIA_PLAY_PAUSE, KEYPRESS_NORMAL);
                 } else if (mode == KEYPRESS_LONG_PRESS) {
-                    const char* const args[] = { "cmd", "activity", "start", "-a", "android.settings.SETTINGS", NULL };
+                    const char* const args[] = { "cmd", "activity", "start", "--activity-previous-is-top", "-a", "android.settings.SETTINGS", NULL };
                     start_cmd(args);
                 }
                 break;
             case 0x000c0077: // (YouTube)
-                launch_activity("com.teamsmart.videomanager.tv"); break;
+                if (__predict_true(mode == KEYPRESS_NORMAL)) {
+                    launch_activity("com.teamsmart.videomanager.tv");
+                } else if (mode == KEYPRESS_LONG_PRESS) {
+                    launch_activity("com.futo.fcast.receiver/.MainActivity");
+                }
+                break;
             case 0x000c0078: // (Netflix)
                 if (__predict_true(mode == KEYPRESS_NORMAL)) {
                     launch_activity("org.xbmc.kodi/.Splash");

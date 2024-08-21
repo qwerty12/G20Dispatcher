@@ -90,7 +90,7 @@ The mappings are designed to match the most natural equivalents where possible, 
 | Green          | [`KEYCODE_PROG_GREEN`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_GREEN) |                                                                                                                                                                                                                   |
 | Yellow         | [`KEYCODE_PROG_YELLOW`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_PROG_YELLOW) |                                                                  |
 | Settings       | [`KEYCODE_MEDIA_PLAY_PAUSE`](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_MEDIA_PLAY_PAUSE)<br>Launch TV Settings (held) |                                                  |
-| YouTube        | Launch [SmartTube](https://github.com/yuliskov/SmartTube) |                                                      |
+| YouTube        | Launch [SmartTube](https://github.com/yuliskov/SmartTube)<br>Launch [FCast](https://fcast.org/) |                                                      |
 | Netflix        | Launch [Kodi](https://kodi.tv/) |                                                      |
 
 ## Building
